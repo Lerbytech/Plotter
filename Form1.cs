@@ -30,7 +30,7 @@ namespace Plotter
     public string PATH = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Raw";
     //public string savePATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH37_Kalman.png";
     public string savePATH = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\SigmaReject2";
-    public Image<Gray, Byte> min = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Z-Project Gray\MIN_M-Movie0012.tif");
+    //public Image<Gray, Byte> min = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Z-Project Gray\MIN_M-Movie0012.tif");
     public string savePATH2 = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65_Mean20.png";
     public Form1()
     {
@@ -46,7 +46,7 @@ namespace Plotter
       Y = GetIntensity(Images);
        */
 
-      string[] lines = System.IO.File.ReadAllLines(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Neurons Data\Images\Neuron_0.txt");
+      string[] lines = System.IO.File.ReadAllLines(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\Neurons Data\Images\Neuron_1.txt");
       for (int i = 0; i < lines.Length; i++)
       { 
         X.Add(i);
@@ -84,6 +84,39 @@ namespace Plotter
 
 
       #region Мишин метод
+
+      List<double> disp = WindowDispersion(minDiff, 50);
+      PlotData(disp, "DISPERSION", "DISP1");
+
+      disp = WindowAVG(disp, 50);
+      List<double> disp2 = new List<double>(); disp2.AddRange(disp);
+      PlotData(disp, "DISPERSION + AVG", "DISP2");
+
+      //disp = WindowDispersion(disp, 50);
+      //PlotData(disp, "DISPERSIONS + AVG + DISPERSIONS", "DISP3");
+
+
+      X = new List<double>();
+      for (int i = 0; i < disp.Count; i++) X.Add(i);
+
+      GraphPane pane1 = zedGraphControl.GraphPane;
+
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = X.Count + 50;
+      PointPairList list1 = new PointPairList(X.ToArray(), disp.ToArray());
+      LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      list1 = new PointPairList(X.ToArray(), disp2.ToArray());
+      myCurve1 = pane1.AddCurve("", list1, Color.Blue, SymbolType.None);
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      //pane1.Title.Text = Title;
+      Image bp1 = zedGraphControl.GetImage();
+      bp1.Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\" + "DISP1_2" + ".png");
+     
+
+      /*
       List<double> sign_square = new List<double>();
       for (int i = 0; i < minDiff.Count; i++) sign_square.Add( minDiff[i] * minDiff[i] );
 
@@ -97,6 +130,7 @@ namespace Plotter
       BB /= minDiff.Count;
 
       double dispersion = Math.Sqrt(BB * BB - AA * AA);
+       * */
       #endregion  
 
 
@@ -140,7 +174,7 @@ namespace Plotter
 
       }
       */
-
+      /*
       #region      
 
       X = new List<double>();
@@ -180,8 +214,8 @@ namespace Plotter
       pane1.Title.Text = "";
       Image bp1 = zedGraphControl.GetImage();
       bp1.Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\" +  "Separated BY MEDIAN" + ".png");
-
-      #endregion
+      
+      #endregion*/
 
 
 
@@ -349,7 +383,7 @@ namespace Plotter
       zedGraphControl.Invalidate();
       pane1.Title.Text = Title;
       Image bp1 = zedGraphControl.GetImage();
-      bp1.Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\" + filename + ".png");
+      bp1.Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\" + filename + ".png");
     }
 
     public void LocalMINMAX(List<double> input, int window)
@@ -401,5 +435,35 @@ namespace Plotter
 
 
     }
+
+    public List<double> WindowDispersion(List<double> input, int window)
+    {
+      List<double> res = new List<double>();
+
+      double mean = 0;
+      double disp = 0;
+      List<double> X = new List<double>();
+      List<double> XX = new List<double>();
+
+      for (int i = 0; i < input.Count - window; i++)
+      {
+        
+        //X = new List<double>();
+        //XX = new List<double>();
+        mean = 0; disp = 0;
+
+        for (int j = i; j < i +  window; j++) mean += input[j];
+        mean /= window;
+
+        for (int j = i; j < i + window; j++) disp += (input[j] - mean) * (input[j] - mean);
+        disp /= window;
+        X.Add(Math.Sqrt(disp) );
+      }
+      for (int i = input.Count - window; i < input.Count; i++) X.Add(input[i]);
+
+      return X;
+    }
+
+
   }
 }
