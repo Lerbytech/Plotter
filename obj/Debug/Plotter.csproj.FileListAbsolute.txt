@@ -12,3 +12,17 @@ c:\users\leica\documents\visual studio 2012\Projects\Plotter\Plotter\obj\Debug\P
 c:\users\leica\documents\visual studio 2012\Projects\Plotter\Plotter\obj\Debug\Plotter.csproj.GenerateResource.Cache
 c:\users\leica\documents\visual studio 2012\Projects\Plotter\Plotter\obj\Debug\Plotter.exe
 c:\users\leica\documents\visual studio 2012\Projects\Plotter\Plotter\obj\Debug\Plotter.pdb
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.exe
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.pdb
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Plotter.exe
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Plotter.pdb
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.UI.dll
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.World.dll
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.UI.xml
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.World.xml
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\ZedGraph.xml
+C:\Users\Админ\Documents\GitHub\Plotter\bin\Debug\zh-CN\ZedGraph.resources.dll
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.csprojResolveAssemblyReference.cache
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.Form1.resources
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.Properties.Resources.resources
+C:\Users\Админ\Documents\GitHub\Plotter\obj\Debug\Plotter.csproj.GenerateResource.Cache

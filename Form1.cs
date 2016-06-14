@@ -26,35 +26,172 @@ namespace Plotter
 
     // 27 38 38normal  47 65
     //C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65_Kalman
-    public string PATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65";
-    public string savePATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH37_Kalman.png";
+    //public string PATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65";
+    public string PATH = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Raw";
+    //public string savePATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH37_Kalman.png";
+    public string savePATH = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\SigmaReject2";
+    public Image<Gray, Byte> min = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Z-Project Gray\MIN_M-Movie0012.tif");
     public string savePATH2 = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65_Mean20.png";
     public Form1()
     {
       InitializeComponent();
-      X = new List<double>();
-      Y = new List<double>();
-      Images = GetImages(GetFiles(PATH));
+      List<double> X = new List<double>();
+      List<double> Y = new List<double>();
 
-
+      /*Images = GetImages(GetFiles(PATH));
       Tools.Denoise.PrepareDenoiseFunctions(Images[0].Width, Images[0].Height);
-      SaveToVideo(Images);
-      for (int i = 0; i < Images.Count; i++) Images[i] = Tools.Denoise.SigmaReject2(Images[i]);
-
-      //Y = GetIntensity(Images);
-      //for (int i = 0; i < Y.Count; i++) X.Add(i);
-
-      //#region ZEDGRAPH 
-      ///*
-      //GraphPane pane1 = zedGraphControl.GraphPane;
+      //SaveToVideo(Images);
+      for (int i = 0; i < Images.Count; i++) { Images[i] = Tools.Denoise.SigmaReject2(Images[i] - min); Images[i].Save(savePATH + "\\" + i.ToString() + ".png");  }
       
-      //  pane1.CurveList.Clear();
-      //  PointPairList list1 = new PointPairList(X.ToArray(), Y.ToArray());
-      //  LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
-      //  zedGraphControl.AxisChange();
-      //  zedGraphControl.Invalidate();
-      //  Image bp1 = zedGraphControl.GetImage();
-      // bp1.Save(savePATH);
+      Y = GetIntensity(Images);
+       */
+
+      string[] lines = System.IO.File.ReadAllLines(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Neurons Data\Images\Neuron_0.txt");
+      for (int i = 0; i < lines.Length; i++)
+      { 
+        X.Add(i);
+        Y.Add(double.Parse(lines[i]));
+      }
+
+      List<double> AVG = WindowAVG(Y, 200);
+      
+      List<double> diff = new List<double>();
+      for (int i = 0; i < AVG.Count; i++) diff.Add( Y[i] - AVG[i]);
+
+      #region ZEDGRAPH 
+      ///*
+      ///
+
+      PlotData(Y, "Signal", "bp1");
+
+      PlotData(AVG, "AVG", "bp2");
+
+      PlotData(diff, "Corrected", "bp3");
+
+      List<double> avgDiff = WindowAVG(diff, 50);
+      
+      PlotData(avgDiff, "Smoothed", "bp4");
+      
+      List<double> minDiff = new List<double>();
+      minDiff.AddRange(diff);
+      minDiff = WindowAVG(minDiff, 20);
+
+      PlotData(minDiff, "Smooth", "bp5");
+      double Min = minDiff.Min();
+      for (int i = 0; i < minDiff.Count; i++) minDiff[i] -= Min;
+      
+      PlotData(minDiff, "Minus Min + smooth", "bp6");
+
+
+      #region Мишин метод
+      List<double> sign_square = new List<double>();
+      for (int i = 0; i < minDiff.Count; i++) sign_square.Add( minDiff[i] * minDiff[i] );
+
+      double AA = 0; double BB = 0;
+      for (int i = 0; i < minDiff.Count; i++)
+      {
+        AA += minDiff[i];
+        BB += sign_square[i];
+      }
+      AA /= minDiff.Count;
+      BB /= minDiff.Count;
+
+      double dispersion = Math.Sqrt(BB * BB - AA * AA);
+      #endregion  
+
+
+
+
+
+
+      List<double> medDiff = new List<double>(); medDiff.AddRange(minDiff);
+      medDiff.Sort();
+      double median = 0.5 * (medDiff[medDiff.Count / 2 - 1] + medDiff[medDiff.Count / 2 - 1]);
+
+      double meanVal = 0;
+      for (int i = 0; i < minDiff.Count; i++) meanVal += minDiff[i];
+      meanVal /= minDiff.Count;
+
+      List<double> separated = new List<double>();
+      separated.AddRange(minDiff);
+      for (int i = 0; i < separated.Count; i++)
+        if (separated[i] < median) separated[i] = 0;
+        else separated[i] = 1;
+
+      //FLTR
+      /*
+      int FLTR_rate = 5;
+      int A = 0;
+      int Z = 0;
+      int i = 0;
+      for (int i = 0; i < separated.Count; i++) if (separated[i] = 1) { A = i; break; }
+      for ( ; i < separated.Count; i++)
+      {
+        if (separated[i] == 0) Z = i;
+        else if (Z = 0 && separated[i] == 1) A = 
+
+        if ( Z - A <= FLTR_rate )
+          for (int j = A; j < Z; j++)
+          {
+            separated[j] = 0;
+            A = Z = 0;
+          }
+
+
+      }
+      */
+
+      #region      
+
+      X = new List<double>();
+      //for (int i = 0; i < separated.Count; i++) X.Add(i);
+
+      GraphPane pane1 = zedGraphControl.GraphPane;
+
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = separated.Count + 50;
+      LineItem myCurve1;
+      PointPairList list1;
+      
+      Y = new List<double>();
+      Y.Add( minDiff[0] );
+      for (int i = 1; i < separated.Count; i++)
+      {
+        if (separated[i] != separated[i - 1])
+        {
+          list1 = new PointPairList(X.ToArray(), Y.ToArray());
+          if (separated[i - 1] == 0 )
+            myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+          else 
+            myCurve1 = pane1.AddCurve("", list1, Color.Red, SymbolType.None);
+
+          X = new List<double>();
+          Y = new List<double>();
+        }
+        else 
+        { 
+          Y.Add ( minDiff[i]);
+          X.Add( i );
+        }
+      }
+
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      pane1.Title.Text = "";
+      Image bp1 = zedGraphControl.GetImage();
+      bp1.Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\" +  "Separated BY MEDIAN" + ".png");
+
+      #endregion
+
+
+
+      PlotData(separated, "Separated", "bp8");
+
+      //----------
+      //LocalMINMAX(ZP_minDiff, 10);
+
+#endregion
+      int y = 5;
 
       // */
       // GraphPane pane2 = zedGraphControl.GraphPane;
@@ -120,8 +257,30 @@ namespace Plotter
 
     public List<double> WindowAVG(List<double> input, int window)
     {
+
+      List<double> res = new List<double>();
+      double cap = 0;
+      for (int i = 1; i <= window; i++)
+      {
+        cap = 0;
+        for (int j = 0; j < i; j++) cap += input[j];
+        //cap += input[i];
+        res.Add( cap / i );
+      }
+
+      int k = 1;
+      for (int i = window + 1; i < input.Count; i++)
+      {
+        cap = 0;
+        for (int j = k; j < i; j++) cap += input[j];
+        k++;
+        res.Add(cap / window);
+      }
+
+      return res;
+      /*
       double dec = 1/(double)window;
-      double cap ;
+      double cap;
       List<double> res = new List<double>();
 
       for (int i = 0; i < input.Count - window; i++)      
@@ -133,6 +292,7 @@ namespace Plotter
       }
 
       return res;
+      * */
     }
 
     public void SaveToVideo(List<Image<Gray, Byte>> img)
@@ -149,6 +309,97 @@ namespace Plotter
       }
      VW.Dispose();
      tmpMat.Dispose();
+    }
+    
+    public List<double> MinFromZ_Project(List<double> input)
+    {
+      Image<Gray, Byte> minIMG = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Z-Project Gray\Min.png");
+      Image<Gray, Byte> Mask = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Binary Masks\0.png");
+      
+      Image<Gray, Byte> tmp = Mask.CopyBlank();
+      CvInvoke.cvSetImageROI(tmp, new Rectangle(5, 5, 172, 130));
+      minIMG.CopyTo(tmp);
+      CvInvoke.cvResetImageROI(tmp);
+
+      //
+      tmp = tmp.Copy(Mask);
+      //
+      List<double> res = new List<double>();
+      res.AddRange(input);
+
+      double MIN = CvInvoke.Sum(tmp).V0;
+      for (int i = 0; i < res.Count; i++)
+        res[i] -= MIN;
+
+      return res;
+    }
+
+    public void PlotData(List<double> input, string Title, string filename)
+    {
+      List<double> X = new List<double>();
+      for (int i = 0; i < input.Count; i++) X.Add(i);
+
+      GraphPane pane1 = zedGraphControl.GraphPane;
+
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = X.Count + 50;
+      PointPairList list1 = new PointPairList(X.ToArray(), input.ToArray());
+      LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      pane1.Title.Text = Title;
+      Image bp1 = zedGraphControl.GetImage();
+      bp1.Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\" + filename + ".png");
+    }
+
+    public void LocalMINMAX(List<double> input, int window)
+    {
+      List<int> MAXS = new List<int>();
+      List<int> MINS = new List<int>();
+
+      bool OK_max = true;
+      bool OK_min = true;
+      int k = 0;
+      for (int i = window / 2; i < input.Count - window / 2; i++)
+      {
+        for (int j = 0 + k; j < i + k; j++)
+        {
+          try
+          {
+            if (input[j] > input[i]) OK_max = false;
+            if (input[j] < input[i]) OK_min = false;
+          }
+          catch (Exception ex) { }
+        }
+
+        if (OK_max) MAXS.Add(i);
+        if (OK_min) MINS.Add(i);
+        
+        OK_max = true;
+        OK_min = true;
+        k++;
+      }
+
+      k = 5;
+      /*
+      GraphPane pane1 = zedGraphControl.GraphPane;
+
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = X.Count + 50;
+      PointPairList list1 = new PointPairList(X.ToArray(), Y.ToArray());
+      LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      pane1.Title.Text = "Mins";
+
+      PointPairList list1 = new PointPairList(X.ToArray(), Y.ToArray());
+      LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+
+      Image bp1 = zedGraphControl.GetImage();
+      bp8.Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\bp8.png");
+      */
+
+
     }
   }
 }
