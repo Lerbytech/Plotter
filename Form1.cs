@@ -59,34 +59,34 @@ namespace Plotter
       PlotData(Y, "Raw Signal", "Raw Signal");
 
       //Clear inclination
-      List<double> AVG = WindowAVG(Y, 350); //4585
+      List<double> AVG = WindowAVG(Y, 350); 
       PlotData(AVG, "AVG", "AVG");
       
-      List<double> diff = new List<double>(); //4585
+      List<double> diff = new List<double>(); 
       for (int i = 0; i < AVG.Count; i++) diff.Add( Y[i] - AVG[i]);
       PlotData(diff, "No Inclination", "No_Inclination");
 
       // No min
-      List<double> minDiff = new List<double>(); //4585
+      List<double> minDiff = new List<double>(); 
       minDiff.AddRange(diff);
       double Min = minDiff.Min();
       for (int i = 0; i < minDiff.Count; i++) minDiff[i] -= Min;
       PlotData(minDiff, "No Inclination - Min", "No Inclination_Min");
 
       //Smoothe no inclin      
-      minDiff = WindowAVG(minDiff, 15); //4584
+      minDiff = WindowAVG(minDiff, 15);
       PlotData(minDiff, "Smooth No Inclination", "Smooth_No_Inclination");
       #endregion 
 
       #region Мишин метод
-      List<double> disp = WindowDispersion(minDiff, 50); //4584
+      List<double> disp = WindowDispersion(minDiff, 50);
       PlotData(disp, "DISPERSION", "DISPERSION");
 
-      List<double> dispAVGC = new List<double>(); //4583
+      List<double> dispAVGC = new List<double>();
       dispAVGC = WindowAVG(disp, 175);
       PlotData(dispAVGC, "DISPERSION + AVGC", "DISPERSION_AvgC");
 
-      List<double> dispAVGC_Disp = WindowDispersion(dispAVGC, 50); //4583
+      List<double> dispAVGC_Disp = WindowDispersion(dispAVGC, 50); 
       PlotData(dispAVGC_Disp, "DISPERSIONS + AVG + DISPERSIONS", "DISPERSION_AvgC_Disp");
 
       PlotData(disp, dispAVGC, "Comparison disp and disp+avgc", "Disp_vs_dispavgc");      
@@ -332,7 +332,48 @@ namespace Plotter
       Image bp1 = zedGraphControl.GetImage();
       bp1.Save(Path_toSave + filename + ".png");
     }
-    
+
+
+    public void PlotData(List<List<PointD>> modulate, List<double> input2, string Title, string filename)
+    {
+      List<double> X = new List<double>();
+
+      for (int i = 0; i < ((modulate.Count > input2.Count) ? modulate.Count : input2.Count); i++) X.Add(i);
+
+      GraphPane pane1 = zedGraphControl.GraphPane;
+
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = X.Count + 50;
+      //pane1.XAxis.Scale.Max = 200;
+
+      PointPairList list1 = new PointPairList(X.ToArray(), input2.ToArray());
+      LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
+      Image bp1 = zedGraphControl.GetImage();
+      //bp1.Save(Path_toSave + filename + ".png");
+
+      List<double> tmp = new List<double>();
+
+      for (int i = 0; i < modulate.Count; i++)
+      {
+        list1 = new PointPairList(X.GetRange((int)modulate[i][0].X, modulate[i].Count).ToArray(), input2.GetRange((int)modulate[i][0].X, modulate[i].Count).ToArray());
+        myCurve1 = pane1.AddCurve("", list1, Color.Red, SymbolType.None);
+        myCurve1.Line.Width = 1.5f;
+
+        list1 = new PointPairList(X.GetRange((int)modulate[i][0].X, modulate[i].Count).ToArray(), input2.GetRange((int)modulate[i][0].X, modulate[i].Count).ToArray());
+        myCurve1 = pane1.AddCurve("", list1, Color.Red, SymbolType.None);
+        myCurve1.Line.Width = 1.5f;
+
+        zedGraphControl.AxisChange();
+        zedGraphControl.Invalidate();
+
+
+      }
+      pane1.Title.Text = Title;
+      bp1 = zedGraphControl.GetImage();
+      bp1.Save(Path_toSave + filename + ".png");
+    }
     public List<double> WindowDispersion(List<double> input, int window)
     {
       double mean = 0;
@@ -447,20 +488,30 @@ namespace Plotter
       // Get all good values as list
       double leftVal = 0;
 
+      int count1 = 0;
+      int count2 = 0;
       List<double> Sparkle = new List<double>();
+     
       for (int i = 0; i < inputSmoothDisp.Count; i++)
       {
         if (inputDisp[i] >= inputSmoothDisp[i])
         {
           leftVal = inputSmoothDisp[i];
 
-          for (; i < inputSmoothDisp.Count && inputDisp[i] > leftVal; i++)
-            Sparkle.Add(inputDisp[i]);
+          while (i < inputSmoothDisp.Count && inputDisp[i] >= leftVal) // очень грязный хак
+          {
+            Sparkle.Add( inputDisp[i] );
+            if (i < inputSmoothDisp.Count) i++;
+            else break;
+            count1++;
+          }
+          i--;
         }
-        else Sparkle.Add(0);
+        else { Sparkle.Add(0); count2++; }
       }
 
 
+      // Separate good values to different list
       PlotData(inputDisp, Sparkle, "Sparkles", "Sparkles of Sparkles");
       List<PointD> tmp = new List<PointD>();
       List<List<PointD>> words = new List<List<PointD>>();
@@ -479,6 +530,8 @@ namespace Plotter
         else tmp.Add(new PointD(i, Sparkle[i]));
       }
 
+
+      // find good and bad lists
       List<List<PointD>> rejected = new List<List<PointD>>();
       List<List<PointD>> good = new List<List<PointD>>();
       for (int i = 0; i < words.Count; i++)
@@ -497,9 +550,9 @@ namespace Plotter
         double tmpDisp = WindowDispersion(inputSRC, indexMax, 50);
         double tmpRY = 3.5 * words[i][0].Y;
         //if (WindowDispersion(inputDisp, (int)r.X, 50) > 0.5 * words[i][0].Y)
-        if (WindowDispersion(inputSRC, indexMax, 50) > 2.5 * words[i][0].Y)
-          good.Add(words[i]);
-        else { rejected.Add(words[i]); }//words.RemoveAt(i); }
+        if (WindowDispersion(inputSRC, indexMax, 50) > 2.1 * words[i][0].Y)
+          rejected.Add(words[i]);
+        else { good.Add(words[i]); }
       }
 
       // for plotting purposes
@@ -516,9 +569,15 @@ namespace Plotter
 
       for (int i = 0; i < rejected.Count; i++)
       {
-        for (int j = 0; j < rejected[i].Count; j++) buildfor2.Insert((int)rejected[i][j].X, rejected[i][j].Y);
+        for (int j = 0; j < rejected[i].Count; j++) buildfor2[(int)rejected[i][j].X] = rejected[i][j].Y;
       }
       PlotData(inputDisp, buildfor2, "Bad Sparkles after filtration", "Bad Sparkles");
+
+
+      PlotData(Sparkle, inputSRC, "Sparkle and Src", "Sparkle_And_SRC");
+      PlotData(good, inputSRC, "Good Sparkle and Src", "GoodSparkle_And_SRC");
+      PlotData(rejected, inputSRC, "Bad Sparkle and Src", "BadSparkle_And_SRC");
+
 
       return words;
 
