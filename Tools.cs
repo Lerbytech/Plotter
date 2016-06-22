@@ -10,7 +10,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.Util;
-
+using ZedGraph;
 
 namespace Plotter
 {
@@ -38,6 +38,25 @@ namespace Plotter
           }
         }
 
+      }
+
+      public static class TxtIO
+      {
+        public static List<double> GetIntensitiesFromFile(string pathToFile)
+        {
+          string[] lines = System.IO.File.ReadAllLines(pathToFile); 
+          
+          List<double> res = new List<double>();
+          double tmp = 0;
+
+          for (int i = 0; i < lines.Length; i++)
+          {
+            double.TryParse(lines[i], out tmp);
+            res.Add ( tmp );
+          }
+
+          return res;
+        }
       }
     }
 
@@ -129,7 +148,7 @@ namespace Plotter
     {
       private static List<Image<Gray, Byte>> arr;
       private static int WIDTH;
-      private static int HEIGHT;
+      private static int HEIGHT; 
       private static byte[, ,] arr_Data0;
       private static byte[, ,] arr_Data1;
       private static byte[, ,] arr_Data2;
@@ -226,6 +245,38 @@ namespace Plotter
         if (result == 0) return 0;
         return Math.Sqrt(result / n);
       }
-    } 
+    }
+
+    public static class Parse
+    {
+      public static List<List<PointD>> GetSparkles(List<double> input)
+      {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        return null;
+      }
+    }
   }
 }

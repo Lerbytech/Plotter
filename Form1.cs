@@ -276,13 +276,13 @@ namespace Plotter
     public void DrawNeuronActivities(List<List<List<PointD>>> input, string filename)
     {
       #region Variables
-      int max_Count = 0;
+       int max_Count = 0;
 
       List<List<PointD>> normalisedInput = new List<List<PointD>>();
       PointD nullPointD = new PointD(0,0);
       List<PointD> tmpList = new List<PointD>();
       
-       List<double> X = new List<double>(); for (int i = 1; i <= max_Count; i++) X.Add(i);
+      List<double> X = new List<double>(); for (int i = 1; i <= max_Count; i++) X.Add(i);
       List<double> Y = new List<double>();
 
       GraphPane pane1 = zedGraphControl.GraphPane;
@@ -292,53 +292,74 @@ namespace Plotter
 
 
       // сгенерировать список цветов от 380 до 740
-      List<Color> Colors = new List<Color>();
-      for (int i = 0; i < input.Count; i++)
-        Colors.Add(Plotter.Colors.waveToColor( 380 + (int)((740 - 380) / input.Count)));
+     
+      List<List<PointD>> curInput = new List<List<PointD>>();
 
-
+      // найти максимум
+      max_Count = int.MinValue;
       for (int N = 0; N < input.Count; N++)
       {
-        //Нормализовать список списков
-        max_Count = int.MinValue;
-        for (int i = 0; i < input[N].Count; i++)
-          if (max_Count < input[N][i][input[N][i].Count - 1].X) max_Count = (int)input[N][i][input[i].Count - 1].X;
+        curInput = input[N];
+     
+        for (int i = 0; i < curInput.Count; i++)
+          if (max_Count < curInput[i][curInput[i].Count - 1].X) max_Count = (int)curInput[i][curInput[i].Count - 1].X;
+      }
 
-        for (int i = 0; i < input[N].Count; i++)
+      //Нормализовать список списков
+      for (int N = 0; N < input.Count; N++)
+      {
+        curInput = input[N];
+        for (int i = 0; i < curInput.Count; i++)
         {
-          for (int j = 0; j < (int)input[N][i][0].X; j++) tmpList.Add(nullPointD);
-          tmpList.AddRange(input[N][i]);
-          for (int j = tmpList.Count; j < max_Count; j++) tmpList.Add(nullPointD);
+        //  for (int j = 0; j < (int)curInput[i][0].X; j++) tmpList.Add(nullPointD);
+          for (int j = 0; j < curInput[i].Count; j++) tmpList.Add(curInput[i][j]);
+        //  for (int j = tmpList.Count; j < max_Count; j++) tmpList.Add(nullPointD);
 
           normalisedInput.Add(tmpList);
           tmpList = new List<PointD>();
         }
-        
-        //Нарисовать список списков
-        pane1.CurveList.Clear();
-        pane1.XAxis.Scale.Max = max_Count + 20;
-        pane1.Title.Text = filename;
-
-        for (int i = 0; i < input.Count; i++)
-        {
-          Y = new List<double>();
-          for (int j = 0; j < normalisedInput[i].Count; j++)
-            Y.Add(normalisedInput[i][j].Y);
-
-          list1 = new PointPairList(X.ToArray(), Y.ToArray());
-
-          myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
-          zedGraphControl.AxisChange();
-          zedGraphControl.Invalidate();
-        }
       }
 
-     
+
+      pane1.XAxis.Scale.Max = max_Count + 20;
+      pane1.Title.Text = filename;
+
+      List<Color> Colors = new List<Color>();
+      for (int i = 0; i < normalisedInput.Count; i++)
+        Colors.Add(Plotter.Colors.waveToColor(380 + i * (int)((740 - 380) / normalisedInput.Count)));
+
+      pane1.CurveList.Clear();
+        
+
+      for (int N = 0; N < normalisedInput.Count; N++)
+      {
+        //Нарисовать список списков
+//        pane1.CurveList.Clear();
+        
+        Y = new List<double>();
+        for (int j = 0; j < normalisedInput[N].Count; j++)
+            Y.Add(normalisedInput[N][j].Y);
+
+        list1 = new PointPairList(X.ToArray(), Y.ToArray());
+
+        myCurve1 = pane1.AddCurve("", list1, Colors[N], SymbolType.None);
+        myCurve1.Line.IsAntiAlias = true;
+        myCurve1.Line.IsSmooth = true;
+        
+      }
+
+      List<int> sum = new List<int>();
+      //for (int i = 0; i < normalisedInput.Count; i++)
+      //  sum.Add((int)normalisedInput[i][0].Sum());
 
       Image bp1 = zedGraphControl.GetImage();
-      bp1.Save(Path_toSave + filename + "_" + CurrentFolder.Replace("\\", String.Empty) + ".png");
+      //bp1.Save(Path_toSave + filename + "_" + CurrentFolder.Replace("\\", String.Empty) + ".png");
+      bp1.Save(Path_toSave + filename + ".png");
 
       int k = 0;
+
+      zedGraphControl.AxisChange();
+      zedGraphControl.Invalidate();
     }
 
 
