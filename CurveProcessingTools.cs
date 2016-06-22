@@ -42,7 +42,17 @@ namespace Plotter
         diff.Add(input[i] - AVG[i]);
       //PlotData(diff, "No Inclination", "No_Inclination");
 
-      return diff;
+      // Smoothing
+      List<double> minDiff = new List<double>(); minDiff.AddRange(diff);
+      minDiff = CurveProcessingTools.WindowAVGC(minDiff, 15);
+      //PlotData(minDiff, "Smooth No Inclination", "Smooth_No_Inclination");
+
+      // Remove lower than zero values
+      double Min = minDiff.Min();
+      for (int i = 0; i < minDiff.Count; i++) minDiff[i] -= Min;
+      //PlotData(minDiff, "No Inclination - Min", "No Inclination_Min");
+
+      return minDiff;
     }
 
     public static List<double> WindowAVG(List<double> input, int window)
@@ -243,28 +253,48 @@ namespace Plotter
       //PlotData(disp, test, "Comparison disp and dispAVGC[i] - dispAVGC[i].Windows[800]", "Test2");
       //PlotData(disp, dispAVGC, "Comparison disp and disp+avgc", "Disp_vs_dispavgc");
       #endregion
-
-      List<Point> SeparationPoints = GetSparkleSeparationPoints(disp, dispAVGC, input);
+      
+      List<Point>  SeparationPoints = GetSparkleSeparationPoints(disp, dispAVGC, input);
       List<List<PointD>> RawSparkles = GetSeparatedWords(SeparationPoints, input);
 
       List<List<PointD>> GoodSparkles = new List<List<PointD>>();
       List<List<PointD>> BadSparkles = new List<List<PointD>>();
       FiltrateSparkles(RawSparkles, input, out GoodSparkles, out BadSparkles);
 
-      return null;
+      return GoodSparkles;
     }
 
 
     private static List<Point> GetSparkleSeparationPoints(List<double> inputDisp, List<double> inputSmoothDisp, List<double> input)
     {
-      double leftVal = 0;
-
+      double leftVal = -1;
+      int left = 0;
+      int threshold = 10;
       int count1 = 0;
       int count2 = 0;
       
       List<Point> res = new List<Point>();
       Point tmp = new Point(0, 0);
+      double d = 0;
 
+
+
+      for (int i = 0; i < inputSmoothDisp.Count; i++)
+      {
+        if (inputDisp[i] >= inputSmoothDisp[i])
+        {
+          if (left == -1) left = i;
+          else continue;
+        }
+        else
+        {
+          if (left == -1) continue;
+          //else { if ( i - left > threshold ) res.Add(new Point(left, i)); left = 0; }
+          else { res.Add(new Point(left, i)); left = -1; }
+        }
+      }
+
+      /*
       for (int i = 0; i < inputSmoothDisp.Count; i++)
       {
         if (inputDisp[i] >= inputSmoothDisp[i])
@@ -273,20 +303,23 @@ namespace Plotter
           tmp.X = i;
           while (i < inputSmoothDisp.Count && inputDisp[i] >= leftVal) // очень грязный хак
           {
+            i++;
            // res.Add(inputDisp[i]);
+            /*
             if (i < inputSmoothDisp.Count) i++;
             else break;
             count1++;
           }
           i--;
           tmp.Y = i;
-          res.Add(tmp);
+          if ( i - tmp.X <= 5 )res.Add(tmp);
         }
         else {
           //res.Add(0); 
           count2++; 
         }
       }
+*/
 
       return res;
     }
@@ -322,10 +355,10 @@ namespace Plotter
       {
         MaxVal = signal.GetRange((int)RawSparkles[i][0].X, RawSparkles[i].Count).Max();
 
-        if (MaxVal > 3.5 * RawSparkles[i][0].Y)
+        if (MaxVal > 1.075 * RawSparkles[i][0].Y)
           BadSparkles.Add(RawSparkles[i]);
         else GoodSparkles.Add(RawSparkles[i]);
-
+          
       }
     }
   }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Xml.Serialization;
+using System.Drawing;
 
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -247,36 +248,102 @@ namespace Plotter
       }
     }
 
-    public static class Parse
+    public static class Plotter
     {
-      public static List<List<PointD>> GetSparkles(List<double> input)
+      public static ZedGraphControl zedGraphControl;
+      public static string PathToSave;
+
+      public static void PlotData(List<double> input, string Title, string filename)
       {
+        List<double> X = new List<double>();
+        for (int i = 0; i < input.Count; i++) X.Add(i);
+
+        GraphPane pane1 = zedGraphControl.GraphPane;
+
+        pane1.CurveList.Clear();
+        pane1.XAxis.Scale.Max = X.Count + 50;
+
+        PointPairList list1 = new PointPairList(X.ToArray(), input.ToArray());
+        LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+        zedGraphControl.AxisChange();
+        zedGraphControl.Invalidate();
+        pane1.Title.Text = Title;
+        Image bp1 = zedGraphControl.GetImage();
+        bp1.Save(PathToSave + filename + ".png");
+      }
+
+      public static void PlotData(List<List<double>> input, string Title, string filename)
+      {
+        List<double> X = new List<double>();
+
+        int max = 0;
+        for (int i = 0; i < input.Count; i++)
+          if (max < input[i].Count) max = input[i].Count;
+
+        for (int i = 0; i < max; i++) X.Add(i);
+
+        GraphPane pane1 = zedGraphControl.GraphPane;
+
+        pane1.CurveList.Clear();
+        pane1.XAxis.Scale.Max = X.Count + 50;
+        pane1.Title.Text = Title;
+
+        PointPairList list;
+        LineItem myCurve;
+
+        for (int i = 0; i < input.Count; i++)
+        {
+
+          list = new PointPairList(X.ToArray(), input[i].ToArray());
+          myCurve = pane1.AddCurve("", list, Color.Black, SymbolType.None);
+        }
 
 
+        zedGraphControl.AxisChange();
+        zedGraphControl.Invalidate();
+        
+        
+        Image bp1 = zedGraphControl.GetImage();
+        bp1.Save(PathToSave + filename + ".png");
+      }
+
+      public static void PlotData(List<List<PointD>> input, string Title, string filename)
+      {
+        List<double> X = new List<double>();
+        List<double> Y = new List<double>();
+        GraphPane pane1 = zedGraphControl.GraphPane;
 
 
+        pane1.CurveList.Clear();
+        pane1.XAxis.Scale.Max = input[input.Count - 1][input[input.Count - 1].Count - 1].Y + 50; //very last index
+        pane1.Title.Text = Title;
+
+        PointPairList list;
+        LineItem myCurve; 
+        zedGraphControl.AxisChange();
+        zedGraphControl.Invalidate();
+
+        for (int i = 0; i < input.Count; i++)
+        {
+          X = new List<double>();
+          for (int j = 0; j < input[i].Count; j++)
+          {
+            X.Add(input[i][j].X);
+            Y.Add(input[i][j].Y);
+          }
+
+          list = new PointPairList(X.ToArray(), Y.ToArray());
+          myCurve = pane1.AddCurve("", list, Color.Black, SymbolType.None);       
+        }
+        zedGraphControl.AxisChange();
+        zedGraphControl.Invalidate();
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        return null;
+        Image bp1 = zedGraphControl.GetImage();
+        bp1.Save(PathToSave + filename + ".png");
       }
     }
+
+
   }
 }

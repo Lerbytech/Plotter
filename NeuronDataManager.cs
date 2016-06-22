@@ -13,14 +13,26 @@ namespace Plotter
   {
     private Dictionary<int, SingleNeuron> Neurons;
 
-    public double[] GetNeuronIntensities(int num)
+    public NeuronDataManager()
+    {
+      Neurons = new Dictionary<int, SingleNeuron>();
+    }
+
+    public List<double> GetCleanNeuronIntensities(int num)
     {
       if (Neurons.ContainsKey(num))
-        return Neurons[num].IntensityData;
+        return Neurons[num].IntensityCleanData;
       else return null;
     }
 
-    public List<PointD> GetSparkleList(int num)
+    public List<double> GetRawNeuronIntensities(int num)
+    {
+      if (Neurons.ContainsKey(num))
+        return Neurons[num].IntensityRawData;
+      else return null;
+    }
+
+    public List<List<PointD>> GetSparkleList(int num)
     {
       if (Neurons.ContainsKey(num))
         return Neurons[num].Sparkles;
@@ -31,7 +43,6 @@ namespace Plotter
     {
       return Neurons.Count;
     }
-
 
     public void CreateNeuron(string PathToDir)
     {
@@ -47,7 +58,7 @@ namespace Plotter
       // create neurons
       for (int i = 0; i < files.Length; i++)
       {
-        Neurons.Add( i , new SingleNeuron( i, Tools.IO.TxtIO.GetIntensitiesFromFile(files[i]).ToArray() ) );
+        Neurons.Add( i , new SingleNeuron( i, Tools.IO.TxtIO.GetIntensitiesFromFile(files[i]) ) );
       }
     }
 
@@ -55,8 +66,18 @@ namespace Plotter
     {
       for (int i = 0; i < paths.Count; i++)
         {
-          Neurons.Add(i, new SingleNeuron(i, Tools.IO.TxtIO.GetIntensitiesFromFile(paths[i]).ToArray()));
+          Neurons.Add(i, new SingleNeuron(i, Tools.IO.TxtIO.GetIntensitiesFromFile(paths[i])));
         }
+    }
+
+    public void FindSparkles()
+    {
+      List<int> Keys = new List<int>(Neurons.Keys);
+
+      for (int i = 0; i < Keys.Count; i++)
+      {
+        Neurons[Keys[i]].Sparkles = CurveProcessingTools.GetSparkles(Neurons[Keys[i]].IntensityCleanData); 
+      }
     }
 
   }

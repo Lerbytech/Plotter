@@ -8,7 +8,6 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.IO;
 using ZedGraph;
 
 using Emgu.CV;
@@ -26,7 +25,7 @@ namespace Plotter
     public string Path_toSave = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\";
     public string Path_toLoad = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\Neurons Data\Images\";
     public string CurrentFolder = "";
-
+    NeuronDataManager NDM = new NeuronDataManager();
     public List<string> NeuronDataFiles;
 
     // 27 38 38normal  47 65
@@ -47,6 +46,13 @@ namespace Plotter
       List<List<List<PointD>>> DATA_Bad = new List<List<List<PointD>>>();
       List<List<PointD>>[] tmp;
 
+     
+      NDM.CreateNeuron(paths);
+      NDM.FindSparkles();
+
+      PlotData(NDM.GetSparkleList(0), NDM.GetCleanNeuronIntensities(0), "TEST", "New algo test");
+
+
       for (int i = 0; i < paths.Count; i++)
       {
         CurrentFolder = paths[i].Replace(Path_toLoad, String.Empty).Replace(".txt", String.Empty) + "\\";
@@ -58,6 +64,7 @@ namespace Plotter
 
       DrawNeuronActivities(DATA_Good, "Good");
       DrawNeuronActivities(DATA_Bad, "Bad");
+      
     }
 
     public List<string> GetFiles(string path)
@@ -86,7 +93,7 @@ namespace Plotter
 
     public List<List<PointD>>[] GetSparkles(List<double> inputDisp, List<double> inputSmoothDisp, List<double> inputSRC)
     {
-     
+
       // Get all good values as list
       double leftVal = 0;
 
@@ -220,14 +227,14 @@ namespace Plotter
       PlotData(Y, "Raw Signal", "Raw Signal");
 
       ///Clear inclination
-      List<double> AVG = WindowAVGC(Y, 175); PlotData(AVG, "AVG", "AVG");
+      List<double> AVG = CurveProcessingTools.WindowAVGC(Y, 175); PlotData(AVG, "AVG", "AVG");
       List<double> diff = new List<double>();
       for (int i = 0; i < AVG.Count; i++) diff.Add(Y[i] - AVG[i]);
       PlotData(diff, "No Inclination", "No_Inclination");
 
       // Smoothing
       List<double> minDiff = new List<double>(); minDiff.AddRange(diff);
-      minDiff = WindowAVGC(minDiff, 15);
+      minDiff = CurveProcessingTools.WindowAVGC(minDiff, 15);
       PlotData(minDiff, "Smooth No Inclination", "Smooth_No_Inclination");
 
       // Remove lower than zero values
@@ -239,16 +246,16 @@ namespace Plotter
       #region Мишин метод
 
       // Dispersion
-      List<double> disp = WindowDispersion(minDiff, 50);
+      List<double> disp = CurveProcessingTools.WindowDispersion(minDiff, 50);
       PlotData(disp, "DISPERSION", "DISPERSION");
 
       // Average of dispersion
       List<double> dispAVGC = new List<double>();
-      dispAVGC = WindowAVGC(disp, 650);
+      dispAVGC = CurveProcessingTools.WindowAVGC(disp, 650);
       PlotData(dispAVGC, "DISPERSION + AVGC", "DISPERSION_AvgC");
 
       //d
-      List<double> test = WindowAVGC(dispAVGC, 650);
+      List<double> test = CurveProcessingTools.WindowAVGC(dispAVGC, 650);
 
       for (int i = 0; i < test.Count; i++)
         test[i] = dispAVGC[i] - test[i];
@@ -388,64 +395,6 @@ namespace Plotter
       return res;
     }
 
-    public List<double> WindowAVG(List<double> input, int window)
-    {
-      List<double> res = new List<double>();
-      double cap = 0;
-
-      for (int i = 0; i < window; i++)
-      {
-        cap += input[i];
-        res.Add(cap / (i + 1));
-      }
-
-      int border;
-      for (int i = window; i < input.Count; i++)
-      {
-        cap = 0;
-        //border = ((i + window) < input.Count) ? i + window : input.Count;
-        if ((i + window) < input.Count)
-        {
-          border = i + window;
-        }
-        else
-        {
-          border = input.Count;
-          window = input.Count - i;
-        }
-        for (int j = i; j < border; j++)
-          cap += input[j];
-        res.Add(cap / window);
-      }
-
-
-      return res;
-
-
-      #region old version
-
-      //List<double> res = new List<double>();
-      //double cap = 0;
-      //for (int i = 1; i <= window; i++)
-      //{
-      //  cap = 0;
-      //  for (int j = 0; j < i; j++)
-      //    cap += input[j];
-      //  res.Add(cap / i);
-      //}
-
-      //int k = 1;
-      //for (int i = window + 1; i < input.Count; i++)
-      //{
-      //  cap = 0;
-      //  for (int j = k; j <= i; j++) cap += input[j];
-      //  k++;
-      //  res.Add(cap / window);
-      //}
-      #endregion
-
-    }
-
     public List<double> MinFromZ_Project(List<double> input)
     {
       Image<Gray, Byte> minIMG = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Z-Project Gray\Min.png");
@@ -555,126 +504,9 @@ namespace Plotter
       }
       pane1.Title.Text = Title;
       bp1 = zedGraphControl.GetImage();
-      bp1.Save(Path_toSave + CurrentFolder + filename + ".png");
-    }
-    public List<double> WindowDispersion(List<double> input, int window)
-    {
-      double mean = 0;
-      double disp = 0;
-      List<double> res = new List<double>();
-
-      int i;
-      for (i = 0; i < input.Count - window; i++)
-      {
-        mean = 0; disp = 0;
-
-        for (int j = i; j < i + window; j++) mean += input[j];
-        mean /= window;
-
-        for (int j = i; j < i + window; j++) disp += (input[j] - mean) * (input[j] - mean);
-        disp /= window;
-        res.Add(Math.Sqrt(disp));
-      }
-
-      int n = 0;
-      for (; i < input.Count; i++)
-      {
-        mean = 0; disp = 0;
-
-        for (int j = i; j < input.Count; j++) mean += input[j];
-        mean /= window - n;
-
-        for (int j = i; j < input.Count; j++) disp += (input[j] - mean) * (input[j] - mean);
-        disp /= window - n;
-        res.Add(Math.Sqrt(disp));
-        n++;
-      }
-
-      //   for (int i = input.Count - window; i < input.Count; i++) X.Add(input[i]);
-
-      return res;
+      bp1.Save(Path_toSave + filename + ".png");
     }
 
-    public double WindowDispersion(List<double> input, int position, int window)
-    {
-      double mean = 0;
-      double disp = 0;
-      double n = 0;
-      int BEG;
-      int END;
-
-      if (position < (window - 1) / 2)
-      {
-        BEG = 0;
-        END = position + (window - 1) / 2;
-        n = END + 1;
-      }
-      else
-      {
-        BEG = position - (window - 1) / 2;
-        END = (position + (window - 1) / 2 < input.Count) ? position + (window - 1) / 2 : input.Count;
-        n = window;
-      }
-
-
-      double res1 = 0;
-      double res2 = 0;
-      for (int i = BEG; i < END; i++)
-      {
-        res1 += input[i] * input[i];
-        res2 += input[i];
-      }
-
-      disp = res1 / n - (res2 / n) * (res2 / n);
-      disp = Math.Sqrt(disp);
-      return disp;
-      disp /= n;
-      disp = Math.Sqrt(disp);
-      return disp;
-    }
-
-    public List<double> WindowAVGC(List<double> input, int window)
-    {
-      List<double> res = new List<double>();
-      double cap = 0;
-
-      // Left border
-      for (int i = 0; i < window / 2; i++)
-      {
-        cap = 0;
-        for (int j = 0; j < i; j++) cap += input[j];
-        for (int k = 0; k < window / 2; k++) cap += input[i + k];
-
-        cap /= window / 2 + i;
-        res.Add(cap);
-      }
-
-      // Center
-      for (int i = window / 2; i < input.Count - window / 2; i++)
-      {
-        cap = 0;
-        for (int j = 0; j < window; j++)
-          cap += input[i - window / 2 + j];
-
-        cap /= window;
-        res.Add(cap);
-      }
-
-
-      // Right border
-      for (int i = input.Count - window / 2; i < input.Count; i++)
-      {
-        cap = 0;
-        for (int j = i - window / 2; j < i; j++) cap += input[j];
-        for (int j = i - 1; j < input.Count; j++) cap += input[j];
-
-        cap /= window / 2 + input.Count - i;
-        res.Add(cap);
-      }
-
-      return res;
-
-    }
     #endregion
 
   }
