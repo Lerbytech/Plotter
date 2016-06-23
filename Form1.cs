@@ -39,7 +39,125 @@ namespace Plotter
     public Form1()
     {
       InitializeComponent();
+
+      Image<Gray, Byte> z_stddev = new Image<Gray, Byte>(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Additional Raw\STD_M-Movie.png");
+      Image<Gray, Byte> z_stddev2 = z_stddev.Clone();
+      CvInvoke.CLAHE(z_stddev, 40, new Size(8, 8), z_stddev2);
+
+      z_stddev2 = z_stddev2.ThresholdToZero(new Gray(201));
+      z_stddev2 =z_stddev2.SmoothMedian(3);
+      z_stddev2._EqualizeHist();
+      z_stddev2 = z_stddev2.ThresholdToZero(new Gray(87));
+
+      Image<Gray, Byte> z_stddev3 = z_stddev.Clone();
+
+      Image<Bgr, Byte> ColorImg = new Image<Bgr, byte>(z_stddev.Bitmap);
+      Image<Gray, float> Im1 = new Image<Gray, float>(z_stddev.Size);
+      Image<Gray, int> Im2 = new Image<Gray, int>(z_stddev.Size);
+      Image<Gray, Byte> Im3 = new Image<Gray, Byte>(z_stddev.Size);
       
+      
+      /*
+      if (frame.channels()==3) cvtColor(frame,frame,CV_BGR2GRAY);
+    /// Establish the number of bins
+    int histSize = 256;
+    /// Set the ranges ( for B,G,R) )
+    float range[] = { 0, 256 } ;
+    const float* histRange = { range };
+    bool uniform = true; bool accumulate = false;
+    /// Compute the histograms:
+    calcHist( &frame, 1, 0, Mat(), hist, 1, &histSize, &histRange, uniform, accumulate );
+    hist /= frame.total();
+
+    Mat logP;
+    cv::log(hist,logP);
+
+    float entropy = -1*sum(hist.mul(logP)).val[0];
+
+    cout << entropy << endl;
+
+      */
+
+      // MyEntropy
+
+      DenseHistogram Histo = new DenseHistogram(256, new RangeF(0,255));
+      Image<Gray, Byte> BlankImg = new Image<Gray, byte>(172, 130, new Gray(0));
+      Histo.Calculate(new Image<Gray, Byte>[] { z_stddev2 }, false, null);
+      float[] HistArr = new float[256];
+      Histo.CopyTo(HistArr);
+  
+
+
+      for (int i = 0; i < HistArr.Length; i++)
+        HistArr[i] /= z_stddev2.Width * z_stddev2.Height;
+
+      HistArr[0] = 22360;    
+      int cnt = 0;
+      double entr = 0;
+      float total_size = z_stddev2.Width * z_stddev2.Height; //total size of all symbols in an image
+      int index = 256;
+
+      try
+      {
+        for (int i = 0; i < index; i++)
+        {
+          float sym_occur = HistArr[i]; //the number of times a sybmol has occured
+          if (sym_occur > 0) //log of zero goes to infinity
+          {
+            cnt++;
+            entr += (sym_occur / total_size) * (Math.Log(total_size / sym_occur, 2));
+          }
+        }
+      }
+      catch (Exception ex) { }
+      
+      Mat logP = new Mat();
+      double entropy;
+      Mat mulR =new Mat();
+      
+
+
+
+
+      try
+      {
+        CvInvoke.Log(Histo, logP);
+        CvInvoke.Multiply(Histo, logP, mulR);
+        entropy = -1 * CvInvoke.Sum(mulR).V0;
+      }
+      catch (Exception ex) { }
+
+
+      try
+      {
+        CvInvoke.DistanceTransform(z_stddev2, Im1, Im2, DistType.L2, 3);
+        Im3 = new Image<Gray, Byte>(@"C:\Users\Admin\Desktop\IMG_Mask_label.png");
+        //Im2 = Im2.ThresholdToZero(new Gray(1));
+
+        for (int y = 0; y < Im2.Height; y++)
+          for (int x = 0; x < Im2.Width; x++)
+          {
+            if (Im3[y, x].Intensity < 2) Im3[y, x] = new Gray(0);
+            else Im3[y, x] = new Gray(150 + 50 * Im3[y, x].Intensity);
+            //else if (Im2[y, x].Intensity != 0) Im2[y, x] = new Gray(1);
+          }
+        //ColorImg[3] = Im3;
+
+        for (int y = 0; y < ColorImg.Height; y++)
+          for (int x = 0; x < ColorImg.Width; x++)
+          {
+            
+          }
+
+        //ColorImg.Add(new Image<Bgr, Byte>(z_stddev.Width, z_stddev.Height, new Bgr(0, 200, 200)), Im3);
+        //CvInvoke.Watershed(ColorImg, Im2);
+
+      }
+      catch (Exception ex) { }
+
+    
+
+
       List<string> paths = GetFiles(Path_toLoad);
 
       List<List<List<PointD>>> DATA_Good = new List<List<List<PointD>>>();
@@ -48,10 +166,69 @@ namespace Plotter
 
      
       NDM.CreateNeuron(paths);
-      NDM.FindSparkles();
+      //NDM.FindSparkles();
 
-      PlotData(NDM.GetSparkleList(0), NDM.GetCleanNeuronIntensities(0), "TEST", "New algo test");
+      PlotData(NDM.GetSparkleList(1), NDM.GetCleanNeuronIntensities(1), "TEST", "New algo test");
 
+      List<double> newT = new List<double>();
+      List<double> newS = CurveProcessingTools.WindowAVGC(NDM.GetCleanNeuronIntensities(1), 5);
+      //List<double> newS = NDM.GetCleanNeuronIntensities(1);
+      List<double> disp = CurveProcessingTools.WindowAVGC(newS, 650);
+
+      for (int i = 0; i < newS.Count; i++) newT.Add(0);
+      int n = 1;
+      for (int i = n; i < newT.Count; i+= n)
+      {
+        /*
+        if (newS[i] - newS[i - n] > disp[i]) newT[i] = newS[i] - newS[i - n];
+        else newT[i] = newS[i];*/
+        if (newS[i] > disp[i]) newT[i] = newS[i] - newS[i - n] + disp[i];
+        else newT[i] = disp[i];
+      }
+
+
+      
+      PlotData(newS, newT, "Difference = " + n.ToString(), "Difference_" + n.ToString());
+      //PlotData(newS, disp, "AVGC", "AVGC");
+
+      
+      double Min = newS.Min();
+      double Max = newS.Max();
+
+      int H_l = (int)Math.Round(Max) + 1;
+      double[] Histogram = new double[H_l];
+
+      List<double> newW = new List<double>();
+      for (int i = 0; i < newS.Count; i++)
+      {
+        double ppp = H_l / newS[i];
+        if (newS[i] >= 1)
+        {
+          Histogram[(int)Math.Round(H_l / newS[i])]++;
+          if ((int)Math.Round(H_l / newS[i]) == 4) newW.Add(0);
+          else newW.Add(newS[i]);
+        }
+        else
+        {
+          Histogram[0]++;
+          newW.Add(newS[i]);
+        }
+      
+
+      }
+      
+      
+      PlotData(newS, newW, "newW", "newW");
+
+
+
+
+
+
+
+
+
+      /*
 
       for (int i = 0; i < paths.Count; i++)
       {
@@ -64,7 +241,7 @@ namespace Plotter
 
       DrawNeuronActivities(DATA_Good, "Good");
       DrawNeuronActivities(DATA_Bad, "Bad");
-      
+      */
     }
 
     public List<string> GetFiles(string path)
@@ -368,7 +545,6 @@ namespace Plotter
       zedGraphControl.AxisChange();
       zedGraphControl.Invalidate();
     }
-
 
 
     #region 
