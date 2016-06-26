@@ -11,7 +11,7 @@ namespace Plotter
 {
   public class NeuronDataManager
   {
-    private Dictionary<int, SingleNeuron> Neurons;
+    public Dictionary<int, SingleNeuron> Neurons;
 
     public NeuronDataManager()
     {

@@ -21,13 +21,30 @@ namespace Plotter
   {
     public List<Image<Gray, Byte>> Images;
 
+    private int _SelectedID = 0;
+    public int SelectedID
+    {
+      get { return _SelectedID; }
+      set
+      {
+        _SelectedID = value;
+        DrawNeuronData(value);
+      }
+    }
 
-    public string Path_toSave = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\";
-    public string Path_toLoad = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\Neurons Data\Images\";
+    private static string import_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\Neurons Data\Images\";
+    private static string export_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\";
+
+    private static string import_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Neurons Data\Images\";
+    private static string export_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Export\";
+
+    public string Path_toSave = export_path_2;
+    public string Path_toLoad = import_path_2;
     public string CurrentFolder = "";
     NeuronDataManager NDM = new NeuronDataManager();
     public List<string> NeuronDataFiles;
 
+    #region Old Paths
     // 27 38 38normal  47 65
     //C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65_Kalman
     //public string PATH = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65";
@@ -36,35 +53,11 @@ namespace Plotter
     //public string savePATH = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\SigmaReject2";
     //public Image<Gray, Byte> min = new Image<Gray, byte>(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\M-Movie012\Z-Project Gray\MIN_M-Movie0012.tif");
     //public string savePATH2 = @"C:\Users\Leica\Documents\Visual Studio 2012\Projects\SimpleCameraSaveFiles\CH65_Mean20.png";
+    #endregion
+
     public Form1()
     {
       InitializeComponent();
-      
-      List<string> paths = GetFiles(Path_toLoad);
-
-      List<List<List<PointD>>> DATA_Good = new List<List<List<PointD>>>();
-      List<List<List<PointD>>> DATA_Bad = new List<List<List<PointD>>>();
-      List<List<PointD>>[] tmp;
-
-     
-      NDM.CreateNeuron(paths);
-      NDM.FindSparkles();
-
-      PlotData(NDM.GetSparkleList(0), NDM.GetCleanNeuronIntensities(0), "TEST", "New algo test");
-
-
-      for (int i = 0; i < paths.Count; i++)
-      {
-        CurrentFolder = paths[i].Replace(Path_toLoad, String.Empty).Replace(".txt", String.Empty) + "\\";
-        Directory.CreateDirectory(Path_toSave + CurrentFolder);
-        tmp = ProcessFile(paths[i]);
-        DATA_Good.Add(tmp[0]);
-        DATA_Bad.Add(tmp[1]);
-      }
-
-      DrawNeuronActivities(DATA_Good, "Good");
-      DrawNeuronActivities(DATA_Bad, "Bad");
-      
     }
 
     public List<string> GetFiles(string path)
@@ -100,7 +93,7 @@ namespace Plotter
       int count1 = 0;
       int count2 = 0;
       List<double> Sparkle = new List<double>();
-     
+
       for (int i = 0; i < inputSmoothDisp.Count; i++)
       {
         if (inputDisp[i] >= inputSmoothDisp[i])
@@ -109,7 +102,7 @@ namespace Plotter
 
           while (i < inputSmoothDisp.Count && inputDisp[i] >= leftVal) // очень грязный хак
           {
-            Sparkle.Add( inputDisp[i] );
+            Sparkle.Add(inputDisp[i]);
             if (i < inputSmoothDisp.Count) i++;
             else break;
             count1++;
@@ -146,7 +139,7 @@ namespace Plotter
       for (int i = 0; i < words.Count; i++)
       {
         double max = words[i].Max(val => val.Y);
-       
+
         int indexMax
             = !inputSRC.Any() ? -1 :
                inputSRC.GetRange((int)words[i][0].X, words[i].Count)
@@ -159,15 +152,15 @@ namespace Plotter
         {
 
         }
-       // start_ind = inputSRC.Where(z => z > words[i][0].X).First();
+        // start_ind = inputSRC.Where(z => z > words[i][0].X).First();
         //end_int = inputSRC.Where(z => z < words[i].Last().X).Last();
         //double max2 = inputSRC.Where(z => z >= start_ind && z <= end_int).Max();
         //double tmpDisp = WindowDispersion(inputSRC, indexMax, 50);
         //double tmpRY = 3.5 * words[i][0].Y;
         //if (WindowDispersion(inputDisp, (int)r.X, 50) > 0.5 * words[i][0].Y)
-        if (inputSRC[indexMax] >  3.5 * words[i][0].Y)
-        //if (inputSRC[indexMax] > 2.5 * words[i][0].Y)
-        //if (max >= 3.5 * words[i][0].Y)
+        if (inputSRC[indexMax] > 3.5 * words[i][0].Y)
+          //if (inputSRC[indexMax] > 2.5 * words[i][0].Y)
+          //if (max >= 3.5 * words[i][0].Y)
           rejected.Add(words[i]);
         else { good.Add(words[i]); }
       }
@@ -270,36 +263,36 @@ namespace Plotter
       PlotData(disp, test, "Comparison disp and dispAVGC[i] - dispAVGC[i].Windows[800]", "Test2");
       PlotData(disp, dispAVGC, "Comparison disp and disp+avgc", "Disp_vs_dispavgc");
 
-      List<List<PointD>> []SparkleGroups = new List<List<PointD>>[2];
+      List<List<PointD>>[] SparkleGroups = new List<List<PointD>>[2];
       SparkleGroups = GetSparkles(disp, dispAVGC, minDiff);
 
 
       return SparkleGroups;
       //DrawNeuronActivities(SparkleGroups[0], "Good");
       //DrawNeuronActivities(SparkleGroups[1], "Bad");
-      #endregion 
+      #endregion
     }
 
     public void DrawNeuronActivities(List<List<List<PointD>>> input, string filename)
     {
       #region Variables
-       int max_Count = 0;
+      int max_Count = 0;
 
       List<List<PointD>> normalisedInput = new List<List<PointD>>();
-      PointD nullPointD = new PointD(0,0);
+      PointD nullPointD = new PointD(0, 0);
       List<PointD> tmpList = new List<PointD>();
-      
+
       List<double> X = new List<double>(); for (int i = 1; i <= max_Count; i++) X.Add(i);
       List<double> Y = new List<double>();
 
       GraphPane pane1 = zedGraphControl.GraphPane;
       PointPairList list1;
-      LineItem myCurve1; 
+      LineItem myCurve1;
       #endregion
 
 
       // сгенерировать список цветов от 380 до 740
-     
+
       List<List<PointD>> curInput = new List<List<PointD>>();
 
       // найти максимум
@@ -307,7 +300,7 @@ namespace Plotter
       for (int N = 0; N < input.Count; N++)
       {
         curInput = input[N];
-     
+
         for (int i = 0; i < curInput.Count; i++)
           if (max_Count < curInput[i][curInput[i].Count - 1].X) max_Count = (int)curInput[i][curInput[i].Count - 1].X;
       }
@@ -318,9 +311,9 @@ namespace Plotter
         curInput = input[N];
         for (int i = 0; i < curInput.Count; i++)
         {
-        //  for (int j = 0; j < (int)curInput[i][0].X; j++) tmpList.Add(nullPointD);
+          //  for (int j = 0; j < (int)curInput[i][0].X; j++) tmpList.Add(nullPointD);
           for (int j = 0; j < curInput[i].Count; j++) tmpList.Add(curInput[i][j]);
-        //  for (int j = tmpList.Count; j < max_Count; j++) tmpList.Add(nullPointD);
+          //  for (int j = tmpList.Count; j < max_Count; j++) tmpList.Add(nullPointD);
 
           normalisedInput.Add(tmpList);
           tmpList = new List<PointD>();
@@ -336,23 +329,23 @@ namespace Plotter
         Colors.Add(Plotter.Colors.waveToColor(380 + i * (int)((740 - 380) / normalisedInput.Count)));
 
       pane1.CurveList.Clear();
-        
+
 
       for (int N = 0; N < normalisedInput.Count; N++)
       {
         //Нарисовать список списков
-//        pane1.CurveList.Clear();
-        
+        //        pane1.CurveList.Clear();
+
         Y = new List<double>();
         for (int j = 0; j < normalisedInput[N].Count; j++)
-            Y.Add(normalisedInput[N][j].Y);
+          Y.Add(normalisedInput[N][j].Y);
 
         list1 = new PointPairList(X.ToArray(), Y.ToArray());
 
         myCurve1 = pane1.AddCurve("", list1, Colors[N], SymbolType.None);
         myCurve1.Line.IsAntiAlias = true;
         myCurve1.Line.IsSmooth = true;
-        
+
       }
 
       List<int> sum = new List<int>();
@@ -369,10 +362,8 @@ namespace Plotter
       zedGraphControl.Invalidate();
     }
 
+    #region
 
-
-    #region 
-    
     public List<Image<Gray, Byte>> GetImages(List<string> input)
     {
       Image<Gray, Byte> tmp = new Image<Gray, byte>(1, 1);
@@ -509,6 +500,187 @@ namespace Plotter
 
     #endregion
 
+    private void DrawNeuronData(int id)
+    {
+      // Получим панель для рисования
+      GraphPane pane = zedGraphControl.GraphPane;
+
+      pane.IsFontsScaled = false;
+      pane.Title.IsVisible = false;
+      pane.XAxis.Title.IsVisible = false;
+      pane.YAxis.Title.IsVisible = false;
+      // Очистим список кривых на тот случай, если до этого сигналы уже были нарисованы
+      pane.CurveList.Clear();
+
+      LineItem myCurve;
+      
+      
+      //Сырой сигнал
+      double[] raw = NDM.GetCleanNeuronIntensities(id).ToArray();
+      double[] x = new double[raw.Length];
+      //заполним x от 0 до N
+      for (int j = 0; j < x.Length; j++) x[j] = j;
+
+      myCurve = pane.AddCurve("", x, raw, Color.Black, SymbolType.None);
+      myCurve.Line.IsSmooth = true;
+      myCurve.Line.SmoothTension = 1;
+
+      // Чистый сигнал
+      if (drawAverageChB.Checked)
+      {
+        raw = NDM.GetRawNeuronIntensities(id).ToArray();
+        x = new double[raw.Length];
+        //заполним x от 0 до N
+        for (int j = 0; j < x.Length; j++) x[j] = j;
+        myCurve = pane.AddCurve("", x, raw, Color.Black, SymbolType.None);
+        myCurve.Line.IsSmooth = true;
+        myCurve.Line.SmoothTension = 1;
+      }
+
+      if (DrawSigmaChB.Checked)
+      {
+      }
+      if (DrawSelectLevelChB.Checked)
+      {
+        //Уровень отсечения ввспышек
+        raw = (NeuronSelector.SelectedItem as SingleNeuron).SparklesLevel;
+        x = new double[raw.Length];
+        //заполним x от 0 до N
+        for (int j = 0; j < x.Length; j++) x[j] = j;
+        myCurve = pane.AddCurve("", x, raw, Color.Red, SymbolType.None);
+        myCurve.Line.IsSmooth = true;
+        myCurve.Line.SmoothTension = 1;
+      }
+      if (DrawSparklesChB.Checked)
+      {
+        for (int i = 0; i < (NeuronSelector.SelectedItem as SingleNeuron).SparkleIndexes.Count; i++)
+        {
+          raw = new double[2] { 1, 1 };
+          x = (NeuronSelector.SelectedItem as SingleNeuron).SparkleIndexes[i];
+          myCurve = pane.AddCurve("", x, raw, Color.Blue, SymbolType.None);
+          myCurve.Line.IsSmooth = true;
+          myCurve.Line.Width = 3;
+          myCurve.Line.SmoothTension = 1;
+        }
+      }
+      // Вызываем метод AxisChange (), чтобы обновить данные об осях. 
+      // В противном случае на рисунке будет показана только часть графика, 
+      // которая умещается в интервалы по осям, установленные по умолчанию
+      zedGraphControl.AxisChange();
+
+      // Обновляем график
+      zedGraphControl.Invalidate();
+    }
+
+    private void DrawAllSignal()
+    {
+      // Получим панель для рисования
+      GraphPane pane = AllSignalZedGraph.GraphPane;
+      pane.IsFontsScaled = false;
+      pane.Title.IsVisible = false;
+      pane.XAxis.Title.IsVisible = false;
+      pane.YAxis.Title.IsVisible = false;
+      // Очистим список кривых на тот случай, если до этого сигналы уже были нарисованы
+      pane.CurveList.Clear();
+
+      // Создадим список точек
+      PointPairList list = new PointPairList();
+
+      // Опорные точки выделяться не будут (SymbolType.None)
+      for (int i = 0; i < NDM.Neurons.Count; i++)
+      {
+        double[] raw = NDM.GetCleanNeuronIntensities(i).ToArray();
+        double[] x = new double[raw.Length];
+        //заполним x от 0 до N
+        for (int j = 0; j < x.Length; j++) x[j] = j;
+
+        double color_length = 380.0 + i * (780.0 - 380.0) / NDM.Neurons.Count;
+
+        LineItem myCurve = pane.AddCurve("", x, raw, Colors.waveToColor(color_length), SymbolType.None);
+        myCurve.Line.IsSmooth = true;
+        myCurve.Line.SmoothTension = 1;
+      }
+
+      // Вызываем метод AxisChange (), чтобы обновить данные об осях. 
+      // В противном случае на рисунке будет показана только часть графика, 
+      // которая умещается в интервалы по осям, установленные по умолчанию
+      AllSignalZedGraph.AxisChange();
+
+      // Обновляем график
+      AllSignalZedGraph.Invalidate();
+
+    }
+
+    private void Form1_Load(object sender, EventArgs e)
+    {
+      List<string> paths = GetFiles(Path_toLoad);
+
+      List<List<List<PointD>>> DATA_Good = new List<List<List<PointD>>>();
+      List<List<List<PointD>>> DATA_Bad = new List<List<List<PointD>>>();
+      List<List<PointD>>[] tmp;
+
+
+      NDM.CreateNeuron(paths);
+      NDM.FindSparkles();
+
+      //PlotData(NDM.GetSparkleList(0), NDM.GetCleanNeuronIntensities(0), "TEST", "New algo test");
+
+
+      //for (int i = 0; i < paths.Count; i++)
+      //{
+      //  CurrentFolder = paths[i].Replace(Path_toLoad, String.Empty).Replace(".txt", String.Empty) + "\\";
+      //  Directory.CreateDirectory(Path_toSave + CurrentFolder);
+      //  tmp = ProcessFile(paths[i]);
+      //  DATA_Good.Add(tmp[0]);
+      //  DATA_Bad.Add(tmp[1]);
+      //}
+
+      //DrawNeuronActivities(DATA_Good, "Good");
+      //DrawNeuronActivities(DATA_Bad, "Bad");
+      NeuronSelector.Items.Clear();
+      foreach (SingleNeuron neuron in NDM.Neurons.Values)
+      {
+        NeuronSelector.Items.Add(neuron);
+      }
+      NeuronSelector.SelectedIndex = 0;
+      DrawAllSignal();
+      DrawNeuronData(0);
+    }
+
+    private void NeuronSelector_SelectedValueChanged(object sender, EventArgs e)
+    {
+      this.SelectedID = NeuronSelector.SelectedIndex;
+    }
+
+    private void zedGraphControl_Load(object sender, EventArgs e)
+    {
+
+    }
+
+    private void drawAverageChB_CheckedChanged(object sender, EventArgs e)
+    {
+      DrawNeuronData(SelectedID);
+    }
+
+    private void DrawSigmaChB_CheckedChanged(object sender, EventArgs e)
+    {
+      DrawNeuronData(SelectedID);
+    }
+
+    private void DrawSelectLevelChB_CheckedChanged(object sender, EventArgs e)
+    {
+      DrawNeuronData(SelectedID);
+    }
+
+    private void DrawSparklesChB_CheckedChanged(object sender, EventArgs e)
+    {
+      DrawNeuronData(SelectedID);
+    }
+
+    private void WindowWindthNUD_ValueChanged(object sender, EventArgs e)
+    {
+      DrawNeuronData(SelectedID);
+    }
   }
 }
 

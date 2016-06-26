@@ -38,3 +38,15 @@ D:\Ilya\GitHub\Plotter\Plotter\obj\Debug\Plotter.csprojResolveAssemblyReference.
 D:\Ilya\GitHub\Plotter\Plotter\obj\Debug\Plotter.Form1.resources
 D:\Ilya\GitHub\Plotter\Plotter\obj\Debug\Plotter.Properties.Resources.resources
 D:\Ilya\GitHub\Plotter\Plotter\obj\Debug\Plotter.csproj.GenerateResource.Cache
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.exe
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.pdb
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\Plotter.exe
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\Plotter.pdb
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.UI.xml
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\Emgu.CV.World.xml
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\ZedGraph.xml
+C:\Users\Михаил\Documents\GitHub\Plotter\bin\Debug\zh-CN\ZedGraph.resources.dll
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.csprojResolveAssemblyReference.cache
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.Form1.resources
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.Properties.Resources.resources
+C:\Users\Михаил\Documents\GitHub\Plotter\obj\Debug\Plotter.csproj.GenerateResource.Cache

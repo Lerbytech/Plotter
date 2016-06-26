@@ -353,6 +353,7 @@ namespace Plotter
 
       for (int i = 0; i < RawSparkles.Count; i++)
       {
+        if (RawSparkles[i].Count == 0) continue;
         MaxVal = signal.GetRange((int)RawSparkles[i][0].X, RawSparkles[i].Count).Max();
 
         if (MaxVal > 1.075 * RawSparkles[i][0].Y)
