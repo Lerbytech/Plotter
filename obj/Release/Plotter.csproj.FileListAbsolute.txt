@@ -1,3 +1,0 @@
-D:\Ilya\GitHub\Plotter\Plotter\obj\Release\Plotter.Form1.resources
-D:\Ilya\GitHub\Plotter\Plotter\obj\Release\Plotter.Properties.Resources.resources
-D:\Ilya\GitHub\Plotter\Plotter\obj\Release\Plotter.csproj.GenerateResource.Cache
