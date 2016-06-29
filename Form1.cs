@@ -29,19 +29,20 @@ namespace Plotter
       {
         _SelectedID = value;
         DrawNeuronData(value);
+        DrawAllSignal();
       }
     }
 
-    private static string import_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\Neurons Data\Images\";
-    private static string export_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\M-Movie\Raw results\";
+    private static string import_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\Neurons Data\Images";
+    private static string export_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\";
 
     private static string import_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Neurons Data\Images\";
     private static string export_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Export\";
 
-    public string Path_toSave = export_path_2;
-    public string Path_toLoad = import_path_2;
+    public string Path_toSave = export_path_1;
+    public string Path_toLoad = import_path_1;
     public string CurrentFolder = "";
-    NeuronDataManager NDM = new NeuronDataManager();
+  
     public List<string> NeuronDataFiles;
 
     #region Old Paths
@@ -59,6 +60,22 @@ namespace Plotter
     {
       InitializeComponent();
     }
+
+
+    private void Form1_Load(object sender, EventArgs e)
+    {
+      NeuronDataManager.CreateNeuron(Path_toLoad);
+
+      NeuronSelector.Items.Clear();
+      foreach (SingleNeuron neuron in NeuronDataManager.Neurons.Values)
+      {
+        NeuronSelector.Items.Add(neuron);
+      }
+      NeuronSelector.SelectedIndex = 0;
+      DrawAllSignal();
+      DrawNeuronData(0);
+    }
+
 
     public List<string> GetFiles(string path)
     {
@@ -514,27 +531,27 @@ namespace Plotter
 
       LineItem myCurve;
       
+      //чистый сигнал
       
-      //Сырой сигнал
-      double[] raw = NDM.GetCleanNeuronIntensities(id).ToArray();
+      double[] raw = NeuronDataManager.Neurons[id].IntensityCleanData.ToArray();
       double[] x = new double[raw.Length];
       //заполним x от 0 до N
       for (int j = 0; j < x.Length; j++) x[j] = j;
-
+        
       myCurve = pane.AddCurve("", x, raw, Color.Black, SymbolType.None);
       myCurve.Line.IsSmooth = true;
       myCurve.Line.SmoothTension = 1;
 
-      // Чистый сигнал
+      // сырой сигнал
       if (drawAverageChB.Checked)
       {
-        raw = NDM.GetRawNeuronIntensities(id).ToArray();
-        x = new double[raw.Length];
+        //raw = NeuronDataManager.Neurons[id].IntensityRawData.ToArray();
+        //x = new double[raw.Length];
         //заполним x от 0 до N
-        for (int j = 0; j < x.Length; j++) x[j] = j;
-        myCurve = pane.AddCurve("", x, raw, Color.Black, SymbolType.None);
-        myCurve.Line.IsSmooth = true;
-        myCurve.Line.SmoothTension = 1;
+        //for (int j = 0; j < x.Length; j++) x[j] = j;
+        //myCurve = pane.AddCurve("", x, raw, Color.Blue, SymbolType.None);
+       // myCurve.Line.IsSmooth = true;
+       // myCurve.Line.SmoothTension = 1;
       }
 
       if (DrawSigmaChB.Checked)
@@ -544,18 +561,18 @@ namespace Plotter
       {
         //Уровень отсечения ввспышек
         raw = (NeuronSelector.SelectedItem as SingleNeuron).SparklesLevel;
-        x = new double[raw.Length];
+        ///x = new double[raw.Length];
         //заполним x от 0 до N
-        for (int j = 0; j < x.Length; j++) x[j] = j;
+        //for (int j = 0; j < x.Length; j++) x[j] = j;
         myCurve = pane.AddCurve("", x, raw, Color.Red, SymbolType.None);
         myCurve.Line.IsSmooth = true;
         myCurve.Line.SmoothTension = 1;
       }
       if (DrawSparklesChB.Checked)
       {
+        raw = new double[2] { 1, 1 };
         for (int i = 0; i < (NeuronSelector.SelectedItem as SingleNeuron).SparkleIndexes.Count; i++)
         {
-          raw = new double[2] { 1, 1 };
           x = (NeuronSelector.SelectedItem as SingleNeuron).SparkleIndexes[i];
           myCurve = pane.AddCurve("", x, raw, Color.Blue, SymbolType.None);
           myCurve.Line.IsSmooth = true;
@@ -570,6 +587,10 @@ namespace Plotter
 
       // Обновляем график
       zedGraphControl.Invalidate();
+
+      // Отобразим изображения нейрона
+      NeuronMask.Image = NeuronDataManager.Neurons[SelectedID].Mask.Clone();
+      NeuronBody.Image =  NeuronDataManager.Neurons[SelectedID].Patch.Clone();
     }
 
     private void DrawAllSignal()
@@ -587,18 +608,23 @@ namespace Plotter
       PointPairList list = new PointPairList();
 
       // Опорные точки выделяться не будут (SymbolType.None)
-      for (int i = 0; i < NDM.Neurons.Count; i++)
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
       {
-        double[] raw = NDM.GetCleanNeuronIntensities(i).ToArray();
+        double[] raw = NeuronDataManager.Neurons[i].IntensityCleanData.ToArray();
         double[] x = new double[raw.Length];
         //заполним x от 0 до N
         for (int j = 0; j < x.Length; j++) x[j] = j;
 
-        double color_length = 380.0 + i * (780.0 - 380.0) / NDM.Neurons.Count;
+        double color_length = 380.0 + i * (780.0 - 380.0) / NeuronDataManager.Neurons.Count;
 
         LineItem myCurve = pane.AddCurve("", x, raw, Colors.waveToColor(color_length), SymbolType.None);
         myCurve.Line.IsSmooth = true;
         myCurve.Line.SmoothTension = 1;
+        if (NeuronDataManager.Neurons[i].ID == SelectedID)
+        {
+          myCurve.Line.Width = 4;
+          myCurve.Line.Color = Color.Black;
+        }
       }
 
       // Вызываем метод AxisChange (), чтобы обновить данные об осях. 
@@ -609,42 +635,6 @@ namespace Plotter
       // Обновляем график
       AllSignalZedGraph.Invalidate();
 
-    }
-
-    private void Form1_Load(object sender, EventArgs e)
-    {
-      List<string> paths = GetFiles(Path_toLoad);
-
-      List<List<List<PointD>>> DATA_Good = new List<List<List<PointD>>>();
-      List<List<List<PointD>>> DATA_Bad = new List<List<List<PointD>>>();
-      List<List<PointD>>[] tmp;
-
-
-      NDM.CreateNeuron(paths);
-      NDM.FindSparkles();
-
-      //PlotData(NDM.GetSparkleList(0), NDM.GetCleanNeuronIntensities(0), "TEST", "New algo test");
-
-
-      //for (int i = 0; i < paths.Count; i++)
-      //{
-      //  CurrentFolder = paths[i].Replace(Path_toLoad, String.Empty).Replace(".txt", String.Empty) + "\\";
-      //  Directory.CreateDirectory(Path_toSave + CurrentFolder);
-      //  tmp = ProcessFile(paths[i]);
-      //  DATA_Good.Add(tmp[0]);
-      //  DATA_Bad.Add(tmp[1]);
-      //}
-
-      //DrawNeuronActivities(DATA_Good, "Good");
-      //DrawNeuronActivities(DATA_Bad, "Bad");
-      NeuronSelector.Items.Clear();
-      foreach (SingleNeuron neuron in NDM.Neurons.Values)
-      {
-        NeuronSelector.Items.Add(neuron);
-      }
-      NeuronSelector.SelectedIndex = 0;
-      DrawAllSignal();
-      DrawNeuronData(0);
     }
 
     private void NeuronSelector_SelectedValueChanged(object sender, EventArgs e)
@@ -680,6 +670,21 @@ namespace Plotter
     private void WindowWindthNUD_ValueChanged(object sender, EventArgs e)
     {
       DrawNeuronData(SelectedID);
+    }
+
+    private void NeuronMask_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void button1_Click(object sender, EventArgs e)
+    {
+      Form2 window_x = new Form2();
+   
+      window_x.Show();
+     
+      Tools.Export.ExportSparkles(Path_toSave + "NeuronsDictionary");
+     
     }
   }
 }

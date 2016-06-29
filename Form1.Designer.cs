@@ -41,9 +41,14 @@
       this.DrawSelectLevelChB = new System.Windows.Forms.CheckBox();
       this.DrawSigmaChB = new System.Windows.Forms.CheckBox();
       this.drawAverageChB = new System.Windows.Forms.CheckBox();
+      this.NeuronMask = new Emgu.CV.UI.ImageBox();
+      this.NeuronBody = new Emgu.CV.UI.ImageBox();
+      this.BTN_Export = new System.Windows.Forms.Button();
       this.groupBox1.SuspendLayout();
       this.groupBox2.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.WindowWindthNUD)).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)(this.NeuronMask)).BeginInit();
+      ((System.ComponentModel.ISupportInitialize)(this.NeuronBody)).BeginInit();
       this.SuspendLayout();
       // 
       // zedGraphControl
@@ -59,7 +64,7 @@
       this.zedGraphControl.ScrollMinX = 0D;
       this.zedGraphControl.ScrollMinY = 0D;
       this.zedGraphControl.ScrollMinY2 = 0D;
-      this.zedGraphControl.Size = new System.Drawing.Size(989, 303);
+      this.zedGraphControl.Size = new System.Drawing.Size(720, 303);
       this.zedGraphControl.TabIndex = 1;
       this.zedGraphControl.Load += new System.EventHandler(this.zedGraphControl_Load);
       // 
@@ -96,12 +101,11 @@
       this.AllSignalZedGraph.ScrollMinX = 0D;
       this.AllSignalZedGraph.ScrollMinY = 0D;
       this.AllSignalZedGraph.ScrollMinY2 = 0D;
-      this.AllSignalZedGraph.Size = new System.Drawing.Size(989, 149);
+      this.AllSignalZedGraph.Size = new System.Drawing.Size(720, 149);
       this.AllSignalZedGraph.TabIndex = 1;
       // 
       // label1
       // 
-      this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.label1.AutoSize = true;
       this.label1.Location = new System.Drawing.Point(-1, 382);
       this.label1.Name = "label1";
@@ -208,11 +212,43 @@
       this.drawAverageChB.UseVisualStyleBackColor = true;
       this.drawAverageChB.CheckedChanged += new System.EventHandler(this.drawAverageChB_CheckedChanged);
       // 
+      // NeuronMask
+      // 
+      this.NeuronMask.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.NeuronMask.Location = new System.Drawing.Point(733, 76);
+      this.NeuronMask.Name = "NeuronMask";
+      this.NeuronMask.Size = new System.Drawing.Size(258, 195);
+      this.NeuronMask.TabIndex = 2;
+      this.NeuronMask.TabStop = false;
+      this.NeuronMask.Click += new System.EventHandler(this.NeuronMask_Click);
+      // 
+      // NeuronBody
+      // 
+      this.NeuronBody.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.NeuronBody.Location = new System.Drawing.Point(733, 277);
+      this.NeuronBody.Name = "NeuronBody";
+      this.NeuronBody.Size = new System.Drawing.Size(258, 195);
+      this.NeuronBody.TabIndex = 2;
+      this.NeuronBody.TabStop = false;
+      // 
+      // BTN_Export
+      // 
+      this.BTN_Export.Location = new System.Drawing.Point(733, 12);
+      this.BTN_Export.Name = "BTN_Export";
+      this.BTN_Export.Size = new System.Drawing.Size(75, 23);
+      this.BTN_Export.TabIndex = 5;
+      this.BTN_Export.Text = "Экспорт";
+      this.BTN_Export.UseVisualStyleBackColor = true;
+      this.BTN_Export.Click += new System.EventHandler(this.button1_Click);
+      // 
       // Form1
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(1003, 545);
+      this.Controls.Add(this.BTN_Export);
+      this.Controls.Add(this.NeuronBody);
+      this.Controls.Add(this.NeuronMask);
       this.Controls.Add(this.groupBox2);
       this.Controls.Add(this.label1);
       this.Controls.Add(this.groupBox1);
@@ -225,6 +261,8 @@
       this.groupBox2.ResumeLayout(false);
       this.groupBox2.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)(this.WindowWindthNUD)).EndInit();
+      ((System.ComponentModel.ISupportInitialize)(this.NeuronMask)).EndInit();
+      ((System.ComponentModel.ISupportInitialize)(this.NeuronBody)).EndInit();
       this.ResumeLayout(false);
       this.PerformLayout();
 
@@ -244,6 +282,9 @@
     private System.Windows.Forms.CheckBox DrawSelectLevelChB;
     private System.Windows.Forms.CheckBox DrawSigmaChB;
     private System.Windows.Forms.CheckBox drawAverageChB;
+    private Emgu.CV.UI.ImageBox NeuronMask;
+    private Emgu.CV.UI.ImageBox NeuronBody;
+    private System.Windows.Forms.Button BTN_Export;
 
   }
 }

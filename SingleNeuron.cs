@@ -19,13 +19,12 @@ namespace Plotter
     private double[] _Average;
     private double[] _Sigma;
     private double[] _AveragePlusSigma;
-    public int windowWidth = 150;
+    public int windowWidth = 230;
     private List<List<PointD>> _Sparkles;
-    private List<double[]> _SparkleIndexes = new List<double[]>();
+    private List<double[]> _SparkleIndexes; // = new List<double[]>();
     private Image<Gray, Byte> _Mask;
     private Image<Gray, Byte> _Patch;
     public bool IsActive = false;
-
 
     public int ID
     {
@@ -49,7 +48,7 @@ namespace Plotter
     {
       get
       {
-        if (_AveragePlusSigma == null) AnalyseSync();
+        if (_AveragePlusSigma == null) AnalyseSignal();
         return _AveragePlusSigma;
       }
       private set
@@ -60,7 +59,7 @@ namespace Plotter
     {
       get
       {
-        if (_Average == null) AnalyseSync();
+        if (_Average == null) AnalyseSignal();
         return _Average;
       }
       private set
@@ -71,14 +70,18 @@ namespace Plotter
     {
       get
       {
-        if (_Sigma == null) AnalyseSync();
+        if (_Sigma == null) AnalyseSignal();
         return _Sigma;
       }
       private set
       {
       }
     }
-    public List<double[]> SparkleIndexes = new List<double[]>();
+    public List<double[]> SparkleIndexes
+    {
+      private set { _SparkleIndexes = value; }
+      get { return _SparkleIndexes; }
+    }
 
     public List<List<PointD>> Sparkles
     {
@@ -107,31 +110,34 @@ namespace Plotter
       IntensityRawData = new List<double>();
       IntensityRawData.AddRange(IntensityData);
 
+
       IntensityCleanData = CurveProcessingTools.ProcessCurve(IntensityData);
+      AnalyseSignal();
+      IndexesToSepSparkles();
 
       Patch = _Patch.Clone();
       Mask = _Patch.ThresholdBinary(new Gray(1), new Gray(255));
-      //Sparkles = CurveProcessingTools.GetSparkles(IntensityRawData);
     }
 
     public SingleNeuron(int _ID, List<double> IntensityData)
-    {
+    { 
       ID = _ID;
 
       IntensityRawData = new List<double>();
       IntensityRawData.AddRange(IntensityData);
 
-      Sparkles = new List<List<PointD>>();
-
       IntensityCleanData = CurveProcessingTools.ProcessCurve(IntensityData);
+      AnalyseSignal();
+      IndexesToSepSparkles();
+
 
       Patch = new Image<Gray, byte>(1, 1);
       Mask = new Image<Gray, byte>(1, 1);
-      //Sparkles = CurveProcessingTools.GetSparkles(IntensityData);
     }
 
-    public void AnalyseSync()
+    public void AnalyseSignal()
     {
+      SparkleIndexes = new List<double[]>();
       double[] raw = _IntensityCleanData.ToArray();
       _Average = new double[raw.Length];
       _Sigma = new double[raw.Length];
@@ -144,7 +150,7 @@ namespace Plotter
       //3. Построим среднее + 3.5 * сигма
       for (int i = 0; i < raw.Length; i++)
       {
-        _AveragePlusSigma[i] = _Average[i] + 3.5 * _Sigma[i];
+        _AveragePlusSigma[i] = _Average[i] + 3.0 * _Sigma[i];
       }
       //4. Найдем вспышки
       SparkleIndexes.Clear();
@@ -201,7 +207,7 @@ namespace Plotter
               max = raw[j];
           //если разница между уровнем отсечения в момент первого пересечения и максимумом существенна, добавим событие в список
           if (max > _AveragePlusSigma[i] + SigmaLevel[left])
-            if (max > 250)
+            //if (max > 250)
               SparkleIndexes.Add(new double[2] { left, right });
           i = right + 1;
 
@@ -212,9 +218,26 @@ namespace Plotter
       // finish
     }
 
+    public void IndexesToSepSparkles()
+    {
+
+      Sparkles = new List<List<PointD>>();
+      List<PointD> tmp;
+
+      for (int i = 0; i < SparkleIndexes.Count; i++)
+      {
+        tmp = new List<PointD>();
+        for (int j = (int)SparkleIndexes[i][0]; j < SparkleIndexes[i][1]; j++)
+          tmp.Add(new PointD( j, IntensityCleanData[j]) );
+        Sparkles.Add( tmp);
+      }
+
+    }
+
+
     public override string ToString()
     {
-      return "Neiron Area " + ID;
+      return "Neuron Area " + ID;
     }
   }
 }

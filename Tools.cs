@@ -61,6 +61,65 @@ namespace Plotter
       }
     }
 
+    public static class Export
+    {
+      public static void ExportSparkles(string path)
+      {
+        List<int> NDM_Keys = NeuronDataManager.Neurons.Keys.ToList<int>();
+        /*
+        Dictionary<int, List<double>> res =new Dictionary<int, List<double>>();
+        
+        List<double[]> tmpSparkle = new List<double[]>();
+        List<double> tmpVal = new List<double>();
+        
+ 
+        
+        for (int i = 0; i < NDM_Keys.Count; i++)
+        {
+           NDM.Neurons[NDM_Keys[i]].AnalyseSync();
+          tmpSparkle = NDM.Neurons[NDM_Keys[i]].SparkleIndexes;
+          System.IO.StreamWriter file = new System.IO.StreamWriter(path + "_" + i.ToString() + ".txt");
+
+          for (int j = 0; j < tmpSparkle.Count; j++)
+          {
+            tmpVal = NDM.Neurons[NDM_Keys[i]].IntensityCleanData.GetRange((int)tmpSparkle[j][0], (int)tmpSparkle[j][1] - (int)tmpSparkle[j][0]);
+            //res.Add(NDM_Keys[j], tmpVal);
+            foreach (var I in tmpVal)
+            { file.Write(I.ToString()); file.Write(" "); }
+            file.WriteLine();
+          }
+
+          file.Close();
+          //Tools.IO.BinaryIO<Dictionary<int, List<double>>>(path + "_" + i.ToString() + ".bin", res, false);
+        }
+        */
+        
+        var result = Parallel.For(0, NDM_Keys.Count, i =>
+        {
+          List<double[]> tmpSparkle = new List<double[]>();
+          List<double> tmpVal = new List<double>();
+          NeuronDataManager.Neurons[NDM_Keys[i]].AnalyseSignal();
+          tmpSparkle = NeuronDataManager.Neurons[NDM_Keys[i]].SparkleIndexes;
+          System.IO.StreamWriter file = new System.IO.StreamWriter(path + "_" + i.ToString() + ".txt");
+
+          for (int j = 0; j < tmpSparkle.Count; j++)
+          {
+            tmpVal = NeuronDataManager.Neurons[NDM_Keys[i]].IntensityCleanData.GetRange((int)tmpSparkle[j][0], (int)tmpSparkle[j][1] - (int)tmpSparkle[j][0]);
+            //res.Add(NDM_Keys[j], tmpVal);
+            foreach (var I in tmpVal)
+            { file.Write(I.ToString()); file.Write(" "); }
+            file.WriteLine();
+          }
+
+          file.Close();
+          //Tools.IO.BinaryIO<Dictionary<int, List<double>>>(path + "_" + i.ToString() + ".bin", res, false);
+        });
+        
+
+
+      }
+    }
+
     public static class Separation
     {
      
@@ -247,103 +306,5 @@ namespace Plotter
         return Math.Sqrt(result / n);
       }
     }
-
-    public static class Plotter
-    {
-      public static ZedGraphControl zedGraphControl;
-      public static string PathToSave;
-
-      public static void PlotData(List<double> input, string Title, string filename)
-      {
-        List<double> X = new List<double>();
-        for (int i = 0; i < input.Count; i++) X.Add(i);
-
-        GraphPane pane1 = zedGraphControl.GraphPane;
-
-        pane1.CurveList.Clear();
-        pane1.XAxis.Scale.Max = X.Count + 50;
-
-        PointPairList list1 = new PointPairList(X.ToArray(), input.ToArray());
-        LineItem myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
-        zedGraphControl.AxisChange();
-        zedGraphControl.Invalidate();
-        pane1.Title.Text = Title;
-        Image bp1 = zedGraphControl.GetImage();
-        bp1.Save(PathToSave + filename + ".png");
-      }
-
-      public static void PlotData(List<List<double>> input, string Title, string filename)
-      {
-        List<double> X = new List<double>();
-
-        int max = 0;
-        for (int i = 0; i < input.Count; i++)
-          if (max < input[i].Count) max = input[i].Count;
-
-        for (int i = 0; i < max; i++) X.Add(i);
-
-        GraphPane pane1 = zedGraphControl.GraphPane;
-
-        pane1.CurveList.Clear();
-        pane1.XAxis.Scale.Max = X.Count + 50;
-        pane1.Title.Text = Title;
-
-        PointPairList list;
-        LineItem myCurve;
-
-        for (int i = 0; i < input.Count; i++)
-        {
-
-          list = new PointPairList(X.ToArray(), input[i].ToArray());
-          myCurve = pane1.AddCurve("", list, Color.Black, SymbolType.None);
-        }
-
-
-        zedGraphControl.AxisChange();
-        zedGraphControl.Invalidate();
-        
-        
-        Image bp1 = zedGraphControl.GetImage();
-        bp1.Save(PathToSave + filename + ".png");
-      }
-
-      public static void PlotData(List<List<PointD>> input, string Title, string filename)
-      {
-        List<double> X = new List<double>();
-        List<double> Y = new List<double>();
-        GraphPane pane1 = zedGraphControl.GraphPane;
-
-
-        pane1.CurveList.Clear();
-        pane1.XAxis.Scale.Max = input[input.Count - 1][input[input.Count - 1].Count - 1].Y + 50; //very last index
-        pane1.Title.Text = Title;
-
-        PointPairList list;
-        LineItem myCurve; 
-        zedGraphControl.AxisChange();
-        zedGraphControl.Invalidate();
-
-        for (int i = 0; i < input.Count; i++)
-        {
-          X = new List<double>();
-          for (int j = 0; j < input[i].Count; j++)
-          {
-            X.Add(input[i][j].X);
-            Y.Add(input[i][j].Y);
-          }
-
-          list = new PointPairList(X.ToArray(), Y.ToArray());
-          myCurve = pane1.AddCurve("", list, Color.Black, SymbolType.None);       
-        }
-        zedGraphControl.AxisChange();
-        zedGraphControl.Invalidate();
-
-
-        Image bp1 = zedGraphControl.GetImage();
-        bp1.Save(PathToSave + filename + ".png");
-      }
-    }
-
-
   }
 }
