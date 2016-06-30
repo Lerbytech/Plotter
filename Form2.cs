@@ -24,8 +24,13 @@ namespace Plotter
 
     private void button1_Click(object sender, EventArgs e)
     {
-      //TT();
-      ColorMap();
+      //SmoothSparkles();
+      //DrawGray();
+      Image<Bgr, Int32> Img = GetCorrelationImage();
+      //imageBox2.Image = Img;
+      pictureBox1.Image = Img.Resize(45, Inter.Nearest).Bitmap;
+      //ColorMap();
+      //PlotNormalisedSignals();
     }
 
     private void ColorMap()
@@ -35,6 +40,10 @@ namespace Plotter
       long l = 0;
       GraphPane pane = ZDC_ColorMap.GraphPane;
       pane.CurveList.Clear();
+      pane.XAxis.Title.Text = "Ось X";
+      pane.XAxis.Title.Text = "Ось X";
+
+
       LineItem myCurve;
       // разбить на линии zedgraph
 
@@ -120,7 +129,8 @@ namespace Plotter
         }
         ZDC_ColorMap.AxisChange();
         ZDC_ColorMap.Invalidate();
-        ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + pair.Value.ID.ToString() + ".png");
+        //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + pair.Value.ID.ToString() + ".png");
+        ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\img_" + pair.Value.ID.ToString() + ".png");
         timer1.Stop();
         l += timer1.ElapsedMilliseconds;
       }
@@ -130,28 +140,20 @@ namespace Plotter
       // подписать оси
       // для каждого нейрона получить окраску вспышек
       // нарисовать тепловую карту 
-      ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_FINAL.png");
+      //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_FINAL.png");
+      ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\\img_FINAL.png");
       l = 10;
       //5740121
       //1771624
       
     }
 
-    private void TT()
+    private List<List<double>> GetNormalisedData()
     {
       List<List<double>> Normalised = new List<List<double>>();
       foreach (KeyValuePair<int, SingleNeuron> pair in NeuronDataManager.Neurons)
       {
         Normalised.Add(pair.Value.IntensityCleanData);
-      }
-
-
-      double meanVal = 0;
-      for (int i = 0; i < Normalised.Count; i++)
-      {
-        meanVal = Normalised[i].Sum() / Normalised[i].Count;
-        for (int j = 0; j < Normalised[i].Count; j++)
-          Normalised[i][j] -= meanVal;
       }
 
       double MaxVal = 0;
@@ -162,7 +164,47 @@ namespace Plotter
           Normalised[i][j] /= MaxVal;
       }
 
-    
+      return Normalised;
+    }
+
+    private List<List<List<PointD>>> GetNormalisedSparkles()
+    {
+      double TotalMax = double.MinValue;
+      double candidate = TotalMax;
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
+      {
+        for (int j = 0; j < NeuronDataManager.Neurons[i].Sparkles.Count; j++)
+        {
+          candidate = NeuronDataManager.Neurons[i].Sparkles[j].Max(p => p.Y);
+          if (TotalMax < candidate) TotalMax = candidate;
+        }
+      }
+
+      List<List<List<PointD>>> res = new List<List<List<PointD>>>();
+      List<List<PointD>> TMP1 = new List<List<PointD>>();
+      List<PointD> TMP2 = new List<PointD>();
+
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
+      {
+        for (int j = 0; j < NeuronDataManager.Neurons[i].Sparkles.Count; j++)
+        {
+          TMP1 = new List<List<PointD>>();
+          TMP2 = new List<PointD>();
+          for (int k = 0; k < NeuronDataManager.Neurons[i].Sparkles[j].Count; k++)
+            TMP2.Add ( new PointD( NeuronDataManager.Neurons[i].Sparkles[j][k].X, NeuronDataManager.Neurons[i].Sparkles[j][k].Y / TotalMax));
+          TMP1.Add(TMP2);
+        }
+        res.Add(TMP1);
+      }
+
+      return res;
+    }
+
+
+    private void PlotNormalisedSignals()
+    {
+      List<List<double>> Normalised = GetNormalisedData();
+
       List<double> X = new List<double>();
       for (int i = 0; i < Normalised[0].Count; i++)
         X.Add(i);
@@ -183,48 +225,202 @@ namespace Plotter
       }
       //Image bp1 = ZDC_ColorMap.GetImage();
 
-      double [,]Conv = new double[Normalised.Count,Normalised.Count];
+     
+    }
 
-      for (int i = 0; i < Normalised.Count; i++)
-      {
-        for (int j = 0; j < Normalised.Count; j++)
+    private Image<Bgr, Int32> GetCorrelationImage()
+    {
+      double[,] CorrMatrix = GetCorrelationMatrix();
+      int N = (int)Math.Sqrt(CorrMatrix.Length);
+
+      double Max = double.MinValue;
+      for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
         {
-          double C = 0;
-          for (int R = 0; R < Normalised[i].Count; R++)
-          {
-            C += Normalised[i][R] * Normalised[j][R];
-            //C += Math.Abs(Normalised[i][R] - Normalised[j][R]);
-          }
-          C /= Normalised.Count;
-          Conv[i, j] = C;
-          Conv[j, i] = C;
+          if (CorrMatrix[i, j] > Max) Max = CorrMatrix[i, j];
         }
-      }
 
-      double Max = - 1;
-      for (int i = 0; i < Normalised.Count; i++)
+      Image<Bgr, Int32> CORRimg = new Image<Bgr, Int32>(N,N);
+      for (int i = 0; i < N; i++)
       {
-        for (int j = 0; j < Normalised.Count; j++)
+        for (int j = 0; j < N; j++)
         {
-          if (Conv[i, j] > Max) Max = Conv[i, j];
-        }
-      }
-
-      Image<Bgr, Int32> CORRimg = new Image<Bgr, Int32>(Normalised.Count, Normalised.Count);
-      for (int i = 0; i < Normalised.Count; i++)
-      {
-        for (int j = 0; j < Normalised.Count; j++)
-        {
-          
-          int []rr = Plotter.Colors.waveLengthToRGB( Conv[i, j] / Max * (740 - 380) + 380);
+          int[] rr = Plotter.Colors.waveLengthToRGB(CorrMatrix[i, j] / Max * (740 - 380) + 380);
           CORRimg[i, j] = new Bgr(rr[2], rr[1], rr[0]);
         }
       }
-
-      for (int i = 0; i < Normalised.Count; i++) 
+      /*
+      for (int i = 0; i < N; i++)
         CORRimg[i, i] = new Bgr(0, 0, 0);
+      */
+      return CORRimg;
     }
 
+    private double[,] GetCorrelationMatrix()
+    {
+
+      List<List<double>> Normalised = GetNormalisedData();
+      /*
+      List<List<double>> Normalised = new List<List<double>>();
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
+      {
+        Normalised.Add(NeuronDataManager.Neurons[i].IntensityCleanData);
+      }*/
+
+      //подсчет матрицы
+      int N = Normalised.Count;
+      int L = Normalised[0].Count;
+      double[,] Corr = new double[N, N];
+
+      for (int i = 0; i < N; i++)
+      {
+        for (int j = i; j < N; j++)
+        {
+          double C = 0;
+          for (int R = 0; R < L; R++)
+          {
+            C += Normalised[i][R] * Normalised[j][R];
+          }
+          C /= L;
+          Corr[i, j] = C;
+          Corr[j, i] = C;
+        }
+      }
+      
+      // нормализация
+      double tmp_val;
+      for (int i = 0; i < N; i++)
+      {
+        tmp_val = Corr[i, i];
+        for (int j = i; j < N; j++)
+        {
+          Corr[i, j] /= tmp_val;
+          Corr[j, i] = Corr[i, j];
+        }
+      }
+      
+      
+
+
+      /*
+      double Max = -1;
+      for (int i = 0; i < Normalised.Count; i++)
+      {
+        for (int j = 0; j < Normalised.Count; j++)
+        {
+          if (Corr[i, j] > Max) Max = Corr[i, j];
+        }
+      }
+
+      for (int i = 0; i < Normalised.Count; i++)
+      {
+        for (int j = 0; j < Normalised.Count; j++)
+        {
+          Corr[i, j] /= Max;
+        }
+      }
+      */
+      return Corr;
+    }
+
+    private void DrawGray()
+    {
+      double[] IntensityData = NeuronDataManager.Neurons[0].IntensityCleanData.ToArray();
+      int L = NeuronDataManager.Neurons[0].IntensityCleanData.Count;
+      int N = NeuronDataManager.Neurons.Count;
+      List<List<double>> AllData = GetNormalisedData();
+      //List<List<List<PointD>>> TMP = GetNormalisedSparkles();
+
+      
+      GraphPane pane = ZDC_ColorMap.GraphPane;
+      pane.CurveList.Clear();
+      pane.XAxis.Scale.Max = L + 50;
+      PointPairList list;
+      LineItem myCurve = new LineItem("");
+      myCurve.Line.Width = 1.0F;
+      double lambda;
+      //Grays
+      double []indexes;
+      int Left = 0;
+      int Right = 1;
+      for (int i = 0; i < N; i++)
+      {
+        // точки до первой вспышки
+        list = new PointPairList();
+        myCurve.Line.Width = 2.0F;
+        IntensityData = AllData[i].ToArray();
+         for (int k = 0; k <= NeuronDataManager.Neurons[i].SparkleIndexes[0][0]; k++)
+            list.Add(k, IntensityData[k]);
+         list.Add(PointPairBase.Missing, PointPairBase.Missing);
+          myCurve = pane.AddCurve("", list, Color.Gray  , SymbolType.None);
+          
+        //
+
+        lambda = i * (740 - 380) / N + 380;
+        for (int j = 1; j < NeuronDataManager.Neurons[i].SparkleIndexes.Count; j++ )
+        {
+          myCurve.Line.Width = 1.0F;
+          list = new PointPairList();
+          indexes = NeuronDataManager.Neurons[i].SparkleIndexes[j - 1];
+          Left = (int)indexes[0];
+          Right = (int)indexes[1];
+          for (int k = Left; k <= Right && ( k <  L); k++)
+            list.Add(k, IntensityData[k]);
+          list.Add(PointPairBase.Missing, PointPairBase.Missing);
+          myCurve = pane.AddCurve("", list, Colors.waveToColor(lambda), SymbolType.None);
+
+          myCurve.Line.Width = 2.0F;
+          list = new PointPairList();
+          indexes = NeuronDataManager.Neurons[i].SparkleIndexes[j];
+          Left = (int)indexes[0];
+          //Right = (int)indexes[0];
+          for (int k = Right + 1; k < Left && (k < L); k++)
+            list.Add(k, IntensityData[k]);
+          list.Add(PointPairBase.Missing, PointPairBase.Missing);
+          myCurve = pane.AddCurve("", list, Color.Gray, SymbolType.None);
+        }
+      }
+      ZDC_ColorMap.AxisChange();
+      ZDC_ColorMap.Invalidate();
+      
+    }
+
+    private void SmoothSparkles()
+    {
+      double[] IntensityData = NeuronDataManager.Neurons[0].IntensityCleanData.ToArray();
+      int L = NeuronDataManager.Neurons[0].IntensityCleanData.Count;
+      int N = NeuronDataManager.Neurons.Count;
+      List<List<double>> AllData = GetNormalisedData();
+
+      GraphPane pane = ZDC_ColorMap.GraphPane;
+      pane.CurveList.Clear();
+      pane.XAxis.Scale.Max = L + 50;
+      PointPairList list;
+      LineItem myCurve = new LineItem("");
+      myCurve.Line.Width = 1.0F;
+      double lambda;
+      List<double> tmpY;
+      List<double> tmpX;
+
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
+      {
+        lambda = i * (740 - 380) / N + 380;
+        for (int j = 0; j < NeuronDataManager.Neurons[i].Sparkles.Count; j++)
+        {
+          tmpY = new List<double>();
+          tmpX = new List<double>();
+          for (int k = 0; k < NeuronDataManager.Neurons[i].Sparkles[j].Count; k++)
+          { tmpY.Add( NeuronDataManager.Neurons[i].Sparkles[j][k].Y);
+            tmpX.Add( NeuronDataManager.Neurons[i].Sparkles[j][k].X);
+          }
+
+          myCurve = pane.AddCurve("", tmpX.ToArray(), tmpY.ToArray(), Color.Gray, SymbolType.None);
+          tmpY = CurveProcessingTools.WindowAVGC(tmpY, 5);
+          myCurve = pane.AddCurve("", tmpX.ToArray(), tmpY.ToArray(), Colors.waveToColor(lambda), SymbolType.None);
+        }
+
+      }
+    }
 
   }
 }

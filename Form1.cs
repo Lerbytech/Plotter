@@ -39,8 +39,10 @@ namespace Plotter
     private static string import_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Neurons Data\Images\";
     private static string export_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Export\";
 
-    public string Path_toSave = export_path_1;
-    public string Path_toLoad = import_path_1;
+    private static string import_path_3 = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\Neurons Data\Images";
+    private static string export_path_3 = @"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\";
+    public string Path_toSave = export_path_3;
+    public string Path_toLoad = import_path_3;
     public string CurrentFolder = "";
   
     public List<string> NeuronDataFiles;

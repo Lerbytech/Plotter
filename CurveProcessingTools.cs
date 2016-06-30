@@ -191,6 +191,8 @@ namespace Plotter
 
     public static List<double> WindowAVGC(List<double> input, int window)
     {
+      if (input.Count <= window) return input;
+
       List<double> res = new List<double>();
       double cap = 0;
 
