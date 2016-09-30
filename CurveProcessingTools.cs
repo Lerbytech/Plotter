@@ -43,7 +43,8 @@ namespace Plotter
       //PlotData(diff, "No Inclination", "No_Inclination");
 
       // Smoothing
-      List<double> minDiff = new List<double>(); minDiff.AddRange(diff);
+      List<double> minDiff = new List<double>(); 
+      minDiff.AddRange(diff);
       minDiff = CurveProcessingTools.WindowAVGC(minDiff, 15);
       //PlotData(minDiff, "Smooth No Inclination", "Smooth_No_Inclination");
 

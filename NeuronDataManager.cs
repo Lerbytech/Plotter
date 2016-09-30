@@ -52,7 +52,7 @@ namespace Plotter
     public static void CreateNeuron(string PathToDir)
     {
      
-      if(!Directory.Exists(PathToDir))
+      if( !Directory.Exists(PathToDir) )
         throw new Exception("ERROR: PathToDir must be path to directory, not to file");
       
       //read files

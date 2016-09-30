@@ -43,7 +43,9 @@
       this.drawAverageChB = new System.Windows.Forms.CheckBox();
       this.NeuronMask = new Emgu.CV.UI.ImageBox();
       this.NeuronBody = new Emgu.CV.UI.ImageBox();
-      this.BTN_Export = new System.Windows.Forms.Button();
+      this.BTN_Additional = new System.Windows.Forms.Button();
+      this.BTN_Import = new System.Windows.Forms.Button();
+      this.BNT_Destination = new System.Windows.Forms.Button();
       this.groupBox1.SuspendLayout();
       this.groupBox2.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.WindowWindthNUD)).BeginInit();
@@ -85,6 +87,7 @@
       this.NeuronSelector.Name = "NeuronSelector";
       this.NeuronSelector.Size = new System.Drawing.Size(121, 21);
       this.NeuronSelector.TabIndex = 0;
+      this.NeuronSelector.SelectedIndexChanged += new System.EventHandler(this.NeuronSelector_SelectedIndexChanged);
       this.NeuronSelector.SelectedValueChanged += new System.EventHandler(this.NeuronSelector_SelectedValueChanged);
       // 
       // AllSignalZedGraph
@@ -231,22 +234,45 @@
       this.NeuronBody.TabIndex = 2;
       this.NeuronBody.TabStop = false;
       // 
-      // BTN_Export
+      // BTN_Additional
       // 
-      this.BTN_Export.Location = new System.Drawing.Point(733, 12);
-      this.BTN_Export.Name = "BTN_Export";
-      this.BTN_Export.Size = new System.Drawing.Size(75, 23);
-      this.BTN_Export.TabIndex = 5;
-      this.BTN_Export.Text = "Экспорт";
-      this.BTN_Export.UseVisualStyleBackColor = true;
-      this.BTN_Export.Click += new System.EventHandler(this.button1_Click);
+      this.BTN_Additional.Location = new System.Drawing.Point(733, 46);
+      this.BTN_Additional.Name = "BTN_Additional";
+      this.BTN_Additional.Size = new System.Drawing.Size(106, 23);
+      this.BTN_Additional.TabIndex = 5;
+      this.BTN_Additional.Text = "Дополнительное";
+      this.BTN_Additional.UseVisualStyleBackColor = true;
+      this.BTN_Additional.Click += new System.EventHandler(this.button1_Click);
+      // 
+      // BTN_Import
+      // 
+      this.BTN_Import.AutoSize = true;
+      this.BTN_Import.Location = new System.Drawing.Point(733, 13);
+      this.BTN_Import.Name = "BTN_Import";
+      this.BTN_Import.Size = new System.Drawing.Size(75, 23);
+      this.BTN_Import.TabIndex = 6;
+      this.BTN_Import.Text = "Открыть..";
+      this.BTN_Import.UseVisualStyleBackColor = true;
+      this.BTN_Import.Click += new System.EventHandler(this.BTN_Import_Click);
+      // 
+      // BNT_Destination
+      // 
+      this.BNT_Destination.Location = new System.Drawing.Point(825, 12);
+      this.BNT_Destination.Name = "BNT_Destination";
+      this.BNT_Destination.Size = new System.Drawing.Size(75, 23);
+      this.BNT_Destination.TabIndex = 7;
+      this.BNT_Destination.Text = "Сохранить...";
+      this.BNT_Destination.UseVisualStyleBackColor = true;
+      this.BNT_Destination.Click += new System.EventHandler(this.BNT_Destination_Click);
       // 
       // Form1
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(1003, 545);
-      this.Controls.Add(this.BTN_Export);
+      this.Controls.Add(this.BNT_Destination);
+      this.Controls.Add(this.BTN_Import);
+      this.Controls.Add(this.BTN_Additional);
       this.Controls.Add(this.NeuronBody);
       this.Controls.Add(this.NeuronMask);
       this.Controls.Add(this.groupBox2);
@@ -284,7 +310,9 @@
     private System.Windows.Forms.CheckBox drawAverageChB;
     private Emgu.CV.UI.ImageBox NeuronMask;
     private Emgu.CV.UI.ImageBox NeuronBody;
-    private System.Windows.Forms.Button BTN_Export;
+    private System.Windows.Forms.Button BTN_Additional;
+    private System.Windows.Forms.Button BTN_Import;
+    private System.Windows.Forms.Button BNT_Destination;
 
   }
 }

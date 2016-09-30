@@ -1,11 +1,14 @@
-﻿using System;
+﻿using System; 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.IO;
+
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -17,20 +20,110 @@ namespace Plotter
 {
   public partial class Form2 : Form
   {
+    int LeftPoint = 0;
+    int RightPoint = 0;
+
+    Image<Bgr, Byte> ColorImg;
+    MasterPane MP;
+    bool isMousePressed = false;
+    int posX;
+    int posY;
+
     public Form2()
     {
       InitializeComponent();
+
+      //ZDC_ColorMap.MouseDownEvent += new ZedGraphControl.ZedMouseEventHandler(zedGraph_MouseDownEvent);
+      //ZDC_ColorMap.MouseUpEvent += new ZedGraphControl.ZedMouseEventHandler(zedGraph_MouseUpEvent);
     }
+
+
+
+
+
+
+    public bool zedGraph_MouseDownEvent(ZedGraphControl sender, MouseEventArgs e)
+    {
+      isMousePressed = true;
+      posX = e.X;
+      posY = e.Y;
+
+      TB_From.Text = posX.ToString();
+      TB_To.Text = e.X.ToString();
+      return false;
+    }
+
+    public bool zedGraph_MouseUpEvent(ZedGraphControl sender, MouseEventArgs e)
+    {
+      if (isMousePressed)
+      {
+        // Координаты, которые переданы в событие
+        PointF eventPoint = new PointF(e.X, e.Y);
+        GraphPane pane = new GraphPane();
+        object nearestObj = new object();
+        int index = 0;
+
+        using (Graphics g = sender.CreateGraphics())
+        {
+          MP.FindNearestPaneObject(eventPoint, g, out pane, out nearestObj, out index);
+        }
+
+        // Пересчитать координаты из системы координат, связанной с контролом zedGraph 
+        // в систему координат, связанную с графиком
+        double newX;
+        double newY;
+        double oldX;
+        double oldY;
+
+        pane.ReverseTransform(new PointF(posX, posY), out oldX, out oldY);
+        pane.ReverseTransform(new PointF(e.X, e.Y), out newX, out newY);
+        MoveImage(oldX, oldY, newX, newY);
+      }
+      return false;
+    }
+
+    private void MoveImage(double oldX, double oldY, double newX, double newY)
+    {
+      double Mul = ColorImageBox.Width * 8700;
+      LeftPoint = (int)Math.Round(Mul * oldX);
+      RightPoint = (int)Math.Round(Mul * newX);
+
+      ColorImageBox.Image = ColorImg.Copy(new Rectangle(LeftPoint, 0, RightPoint, ColorImageBox.Height));
+      ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
+      TB_From.Text = LeftPoint.ToString();
+      TB_To.Text = RightPoint.ToString();
+    }
+
+    private void MoveImage(int L, int R)
+    {/*
+      double Mul = ColorImageBox.Width * 8700;
+      LeftPoint = (int)Math.Round(Mul * oldX);
+      RightPoint = (int)Math.Round(Mul * newX);
+      */
+      ColorImageBox.Image = ColorImg.Copy(new Rectangle(L, 0, R - L, ColorImageBox.Height));
+      ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
+    }
+
 
     private void button1_Click(object sender, EventArgs e)
     {
       //SmoothSparkles();
       //DrawGray();
+
       Image<Bgr, Int32> Img = GetCorrelationImage();
+      Img.Save(@"C:\Users\Admin\Desktop\TempFolder\CorrelationMatrix.png");
       //imageBox2.Image = Img;
-      pictureBox1.Image = Img.Resize(45, Inter.Nearest).Bitmap;
+      //pictureBox1.Image = Img.Resize(45, Inter.Nearest).Bitmap;
       //ColorMap();
-      //PlotNormalisedSignals();
+      ColorImg = IMGColorMap();
+      RightPoint = ColorImg.Width;
+      LeftPoint = 0;
+      TB_From.Text = Left.ToString(); TB_To.Text = RightPoint.ToString();
+
+      ColorImageBox.Image = ColorImg.Copy(new Rectangle(LeftPoint, 0, RightPoint, ColorImageBox.Height));
+      ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
+      PlotNormalisedSignals();
+      ClusterLines();
     }
 
     private void ColorMap()
@@ -41,7 +134,7 @@ namespace Plotter
       GraphPane pane = ZDC_ColorMap.GraphPane;
       pane.CurveList.Clear();
       pane.XAxis.Title.Text = "Ось X";
-      pane.XAxis.Title.Text = "Ось X";
+      pane.XAxis.Title.Text = "Ось Y";
 
 
       LineItem myCurve;
@@ -51,7 +144,7 @@ namespace Plotter
 
       //List<List<PointD>>[] Sparkles = new List<List<PointD>>[Neurons.Count];
 
-      int HeightOfLine = 10; // ZDC_ColorMap.Height / Neurons.Count;
+      int HeightOfLine = 1; // ZDC_ColorMap.Height / Neurons.Count;
       int VerticalSpacing = HeightOfLine;
       int DiscretisationRate = 5;
 
@@ -127,10 +220,9 @@ namespace Plotter
             //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + sparkleID.ToString() + "_" + intsparkleID.ToString() + ".png");
           }
         }
-        ZDC_ColorMap.AxisChange();
-        ZDC_ColorMap.Invalidate();
+     
         //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + pair.Value.ID.ToString() + ".png");
-        ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\img_" + pair.Value.ID.ToString() + ".png");
+        //ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\img_" + pair.Value.ID.ToString() + ".png");
         timer1.Stop();
         l += timer1.ElapsedMilliseconds;
       }
@@ -141,13 +233,102 @@ namespace Plotter
       // для каждого нейрона получить окраску вспышек
       // нарисовать тепловую карту 
       //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_FINAL.png");
-      ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\\img_FINAL.png");
-      l = 10;
+      timer1.Start();
+      Size oldSize = ZDC_ColorMap.Size;
+      ZDC_ColorMap.Size = new Size(8700, 92 * 50);
+      ZDC_ColorMap.AxisChange();
+      ZDC_ColorMap.Invalidate();
+      ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\img_FINAL.png");
+      ZDC_ColorMap.Size = oldSize;
+      timer1.Stop();
+      l = timer1.ElapsedMilliseconds;
       //5740121
       //1771624
       
     }
 
+
+    private Image<Bgr, Byte> IMGColorMap()
+    {
+      // настроить ZedGraph
+      Stopwatch timer1 = new Stopwatch();
+      long l = 0; 
+     
+      Dictionary<int, SingleNeuron> Neurons = NeuronDataManager.Neurons;
+
+
+      int PixelHeight = 20; 
+      int PixelWidth = 5;
+      int DiscretisationRate = 5;
+
+      double LocalMax;
+      double TotalMax;
+      double candidate;
+
+      List<PointD> tmpList = new List<PointD>();
+      PointD[] tmpArr;
+
+      Image<Bgr, Byte> RESIMG = new Image<Bgr, byte>(NeuronDataManager.Neurons[0].IntensityCleanData.Count * PixelWidth / DiscretisationRate,
+                                                     NeuronDataManager.Neurons.Count * PixelHeight,
+                                                     new Bgr(255, 255, 255));
+      int[] _colors = new int[3];
+      byte[] colors = new byte[3];
+
+      int width = RESIMG.Width;
+      int height = RESIMG.Height;
+      int N = 0;
+      byte[, ,] DATA = RESIMG.Data;
+
+      foreach (KeyValuePair<int, SingleNeuron> pair in Neurons) // НЕЙРОНЫ
+      {
+        timer1.Start();
+        
+        for (int sparkleID = 0; sparkleID < pair.Value.Sparkles.Count; sparkleID++) // ВСПЫШКИ
+        {
+          tmpArr = pair.Value.Sparkles[sparkleID].ToArray();
+          TotalMax = tmpArr.Max(p => p.Y);
+
+          for (int intsparkleID = 0; intsparkleID < tmpArr.Length; intsparkleID += DiscretisationRate) // ВНУТРИ ВСПЫШЕК
+          {
+            //
+            LocalMax = tmpArr[intsparkleID].Y;
+            candidate = LocalMax;
+            for (int k = intsparkleID + 1; k < DiscretisationRate && k < tmpArr.Length; k++)
+            {
+              candidate = tmpArr[k].Y;
+              if (LocalMax < candidate)
+                LocalMax = candidate;
+            }
+
+            //
+            _colors = Plotter.Colors.waveLengthToRGB(LocalMax / TotalMax * (740 - 380) + 380);
+            colors[0] = (byte)_colors[2];
+            colors[1] = (byte)_colors[1];
+            colors[2] = (byte)_colors[0];
+
+
+            for (int x = (int)tmpArr[intsparkleID].X; x < tmpArr[intsparkleID].X + DiscretisationRate && x < width; x++)
+              for (int y = pair.Value.ID * PixelHeight; y < pair.Value.ID * PixelHeight + PixelHeight && y < height; y++)
+              {
+                //IMG_DATA[y, x, 0] = (byte)colors[2];
+                //IMG_DATA[y, x, 1] = (byte)colors[1];
+                //IUMG_DATA[y, x, 2] = (byte)colors[0];
+                DATA[y, x, 0] = colors[0];
+                DATA[y, x, 1] = colors[1];
+                DATA[y, x, 2] = colors[2];
+              }
+          }
+        }
+        
+        
+        timer1.Stop();
+        l += timer1.ElapsedMilliseconds;
+      }
+
+        l = 10;
+        return RESIMG;
+    }
+    
     private List<List<double>> GetNormalisedData()
     {
       List<List<double>> Normalised = new List<List<double>>();
@@ -166,7 +347,6 @@ namespace Plotter
 
       return Normalised;
     }
-
     private List<List<List<PointD>>> GetNormalisedSparkles()
     {
       double TotalMax = double.MinValue;
@@ -199,8 +379,6 @@ namespace Plotter
 
       return res;
     }
-
-
     private void PlotNormalisedSignals()
     {
       List<List<double>> Normalised = GetNormalisedData();
@@ -210,22 +388,25 @@ namespace Plotter
         X.Add(i);
 
       GraphPane pane1 = ZDC_ColorMap.GraphPane;
-      pane1.CurveList.Clear();
-      pane1.XAxis.Scale.Max = X.Count + 50;
+      pane1.XAxis.Title.Text = "Время (мс)";
+      pane1.YAxis.Title.Text = "Номер нейрона";
 
+      pane1.CurveList.Clear();
+      pane1.XAxis.Scale.Max = X.Count + 5;
+      pane1.YAxis.Scale.Max = 1;
 
       for (int i = 0; i < Normalised.Count; i++)
       {
         PointPairList list1 = new PointPairList(X.ToArray(), Normalised[i].ToArray());
         LineItem myCurve1 = pane1.AddCurve("", list1, Plotter.Colors.waveToColor(i * (740 - 380)/Normalised.Count + 380), SymbolType.None);
-        ZDC_ColorMap.AxisChange();
-        ZDC_ColorMap.Invalidate();
+     
       
         //bp1.Save(Path_toSave + filename + ".png");
       }
       //Image bp1 = ZDC_ColorMap.GetImage();
 
-     
+      ZDC_ColorMap.AxisChange();
+      ZDC_ColorMap.Invalidate();
     }
 
     private Image<Bgr, Int32> GetCorrelationImage()
@@ -258,15 +439,8 @@ namespace Plotter
 
     private double[,] GetCorrelationMatrix()
     {
-
       List<List<double>> Normalised = GetNormalisedData();
-      /*
-      List<List<double>> Normalised = new List<List<double>>();
-      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
-      {
-        Normalised.Add(NeuronDataManager.Neurons[i].IntensityCleanData);
-      }*/
-
+     
       //подсчет матрицы
       int N = Normalised.Count;
       int L = Normalised[0].Count;
@@ -298,8 +472,29 @@ namespace Plotter
           Corr[j, i] = Corr[i, j];
         }
       }
+
+      int jj;
+      using (StreamWriter SW = new StreamWriter(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\CorrMatrix.txt"))
+      {
+        for (int i = 0; i < N - 1; i++)
+          SW.Write(i.ToString() + " ");
+        SW.Write((N - 1 ).ToString());
+
+        for (int i = 1; i < N; i++)
+        {
+          SW.Write(i.ToString() + " ");
+        for (jj = 0; jj < N - 1; jj++)
+        {
+          SW.Write(Corr[i,jj].ToString());
+          SW.Write(" ");
+        }
+          SW.WriteLine(Corr[i,jj].ToString());
+        }
+      }
+      jj = 2;
       
-      
+
+
 
 
       /*
@@ -422,5 +617,134 @@ namespace Plotter
       }
     }
 
+    private void ClusterLines()
+    {
+      GraphPane pane1 = ZDC_OpticalPlot.GraphPane;
+      pane1.XAxis.Title.Text = "t (cек)";
+      pane1.YAxis.Title.Text = "Номер кластера";
+      
+      
+      pane1.XAxis.Scale.Max = 3187;
+
+      pane1.CurveList.Clear();
+      double[] X = new double[2];
+      double[] Y = new double[2];
+
+      double FPS = 24;
+      double clustTimer = 25000;
+      double T = clustTimer / FPS;
+
+      PointPairList list1;
+      LineItem myCurve1;
+      List<List<double>> clusters = GetClustersFromFile(64);
+      for (int i = 0; i < clusters.Count; i++)
+      {
+        for (int j = 0; j < clusters[i].Count; j++)
+        {
+          X[0] = X[1] = clusters[i][j] / T;
+          Y[0] = i;
+          Y[1] = i + 1;
+          list1 = new PointPairList(X.ToArray(), Y.ToArray());
+          myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+        }
+      }
+
+      ZDC_OpticalPlot.AxisChange();
+      ZDC_OpticalPlot.Invalidate();
+    }
+
+    //load clusters from file
+    private List<List<double>> GetClustersFromFile(int Channel)
+    {
+      string[] lines = File.ReadAllLines(@"L:\Crop\export_" + Channel.ToString());
+
+      List<List<double>> res = new List<List<double>>();
+      List<double> tmp = new List<double>();
+      
+      string[] s;
+      for (int i = 0; i < lines.Length; i++)
+      {
+        s = lines[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var II in s) tmp.Add(Double.Parse(II));
+        tmp.RemoveAt(0);
+        res.Add(tmp);
+        tmp = new List<double>();
+      }
+
+      return res;
+    }
+
+
+    private void imageBox1_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void BTN_AdjustZedGraphs_Click(object sender, EventArgs e)
+    {
+      bool test = Int32.TryParse(TB_From.Text, out LeftPoint);
+      test = Int32.TryParse(TB_To.Text, out RightPoint);
+      MoveImage(LeftPoint, RightPoint);
+    }
+
+    private void Form2_Load(object sender, EventArgs e)
+    {
+      ZedGraph.MasterPane masterPane = ZDC_ColorMap.MasterPane;
+      ZDC_ColorMap.IsSynchronizeXAxes = true;
+      ZDC_ColorMap.IsSynchronizeYAxes = false;
+
+
+      //masterPane.PaneList.Clear();
+      masterPane.Add(ZDC_OpticalPlot.GraphPane);
+
+      using (Graphics g = CreateGraphics())
+      {
+        // Графики будут размещены в один столбец друг под другом
+          masterPane.SetLayout (g, PaneLayout.SingleColumn);
+      }
+      
+      int topMargin = 0;
+      int leftMargin = 25;
+      int bottomMargin = 25;
+      int rightMargin = 25;
+      int spacingY = 1;
+      float labelGapY = 1;
+      float labelGapX = 1;
+
+
+      //masterPane[0].Chart.Rect = new RectangleF(leftMargin, topMargin, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - topMargin - spacingY);
+      //masterPane[1].Chart.Rect = new RectangleF(leftMargin, ZDC_ColorMap.Height / 2 + spacingY, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - spacingY - bottomMargin);
+
+      masterPane[0].Margin.Top = 0.0f;
+      masterPane[0].Margin.Left = 0.0f;
+      masterPane[0].Margin.Right = 20.0f; //20
+      masterPane[0].Margin.Bottom = 0.0f;
+
+      masterPane[1].Margin.Top = 10.0f; //10
+      masterPane[1].Margin.Left = 0.0f;
+      masterPane[1].Margin.Right = 0.0f;
+      masterPane[1].Margin.Bottom = 0.0f;
+
+      masterPane[0].XAxis.Title.IsVisible = false;
+      masterPane[0].YAxis.Title.IsVisible = false;
+      masterPane[0].Title.IsVisible = false;
+      masterPane[0].XAxis.Scale.IsVisible = false;
+      masterPane[0].XAxis.Scale.LabelGap = labelGapY;
+      masterPane.InnerPaneGap = 0.0f;
+      masterPane[1].XAxis.Title.IsVisible = false;
+      masterPane[1].YAxis.Title.IsVisible = false;
+      masterPane[1].Title.IsVisible = false;
+      masterPane[1].XAxis.Scale.LabelGap = labelGapX;
+      masterPane[1].YAxis.Scale.LabelGap = labelGapY;
+      ZDC_ColorMap.AxisChange();
+      ZDC_ColorMap.Invalidate();
+
+      //masterPane.Margin.Bottom = 5;
+      int rr = (int)masterPane[0].Chart.Rect.Width;
+      RectangleF rect = masterPane.Rect;
+    
+    }
+
   }
 }
+
