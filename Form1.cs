@@ -33,26 +33,19 @@ namespace Plotter
       }
     }
 
-    private static string import_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\Neurons Data\Images";
-    private static string export_path_1 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\";
-
-    private static string import_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Neurons Data\Images\";
-    private static string export_path_2 = @"C:\Users\Михаил\YandexDisk\TEST\Export\";
-
-    private static string import_path_3 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_64 part 2\Neurons Data\Images";
-    private static string export_path_3 = @"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_64 part 2\";
-    
-    public string Path_toSave = export_path_1;
-    public string Path_toLoad = import_path_1;
-    public string CurrentFolder = "";
+   public string Path_toSave;
+   public string Path_toLoad;
+   public string CurrentFolder = "";
   
     public List<string> NeuronDataFiles;
 
     public Form1()
     {
       InitializeComponent();
+      GlobalVar.channel_id = 64;
 
-
+      Path_toSave = GlobalVar.export_path;
+      Path_toLoad = GlobalVar.import_path;
 
       
       //string path = @"C:\Users\Admin\Desktop\Антон\exp\2CH65.txt";

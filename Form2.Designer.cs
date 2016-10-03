@@ -121,6 +121,7 @@
       this.export.TabIndex = 7;
       this.export.Text = "BTN_Export";
       this.export.UseVisualStyleBackColor = true;
+      this.export.Click += new System.EventHandler(this.export_Click);
       // 
       // Form2
       // 

@@ -37,9 +37,83 @@ namespace Plotter
       //ZDC_ColorMap.MouseUpEvent += new ZedGraphControl.ZedMouseEventHandler(zedGraph_MouseUpEvent);
     }
 
+    #region функции для двиганья графиков, да
+
+    private void BTN_AdjustZedGraphs_Click(object sender, EventArgs e)
+    {
+      double left = 0, right = 100;
+      bool test = double.TryParse(TB_From.Text, out left);
+      test = double.TryParse(TB_To.Text, out right);
+      LeftPoint = (int)left;
+      RightPoint = (int)right;
+      MoveImage(LeftPoint, RightPoint);
+    }
+
+    private void Form2_Load(object sender, EventArgs e)
+    {
+      ZedGraph.MasterPane masterPane = ZDC_ColorMap.MasterPane;
+      ZDC_ColorMap.IsSynchronizeXAxes = true;
+      ZDC_ColorMap.IsSynchronizeYAxes = false;
 
 
+      //masterPane.PaneList.Clear();
+      masterPane.Add(ZDC_OpticalPlot.GraphPane);
 
+      using (Graphics g = CreateGraphics())
+      {
+        // Графики будут размещены в один столбец друг под другом
+        masterPane.SetLayout(g, PaneLayout.SingleColumn);
+      }
+
+      int topMargin = 0;
+      int leftMargin = 25;
+      int bottomMargin = 25;
+      int rightMargin = 25;
+      int spacingY = 1;
+      float labelGapY = 1;
+      float labelGapX = 1;
+
+
+      //masterPane[0].Chart.Rect = new RectangleF(leftMargin, topMargin, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - topMargin - spacingY);
+      //masterPane[1].Chart.Rect = new RectangleF(leftMargin, ZDC_ColorMap.Height / 2 + spacingY, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - spacingY - bottomMargin);
+
+      masterPane[0].Margin.Top = 0.0f;
+      masterPane[0].Margin.Left = 0.0f;
+      masterPane[0].Margin.Right = 20.0f; //20
+      masterPane[0].Margin.Bottom = 0.0f;
+
+      masterPane[1].Margin.Top = 10.0f; //10
+      masterPane[1].Margin.Left = 0.0f;
+      masterPane[1].Margin.Right = 0.0f;
+      masterPane[1].Margin.Bottom = 0.0f;
+
+      masterPane[0].XAxis.Title.IsVisible = false;
+      masterPane[0].YAxis.Title.IsVisible = false;
+      masterPane[0].Title.IsVisible = false;
+      masterPane[0].XAxis.Scale.IsVisible = false;
+      masterPane[0].XAxis.Scale.LabelGap = labelGapY;
+      masterPane.InnerPaneGap = 0.0f;
+      masterPane[1].XAxis.Title.IsVisible = false;
+      masterPane[1].YAxis.Title.IsVisible = false;
+      masterPane[1].Title.IsVisible = false;
+      masterPane[1].XAxis.Scale.LabelGap = labelGapX;
+      masterPane[1].YAxis.Scale.LabelGap = labelGapY;
+      ZDC_ColorMap.AxisChange();
+      ZDC_ColorMap.Invalidate();
+
+      //masterPane.Margin.Bottom = 5;
+      int rr = (int)masterPane[0].Chart.Rect.Width;
+      RectangleF rect = masterPane.Rect;
+
+         ZDC_OpticalPlot.GraphPane.AxisChangeEvent += GraphPane_AxisChangeEvent;
+    }
+
+    private void GraphPane_AxisChangeEvent(GraphPane pane)
+    {
+      TB_From.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Min.ToString();
+      TB_To.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Max.ToString();
+      BTN_AdjustZedGraphs.PerformClick();
+    }
 
 
     public bool zedGraph_MouseDownEvent(ZedGraphControl sender, MouseEventArgs e)
@@ -100,9 +174,13 @@ namespace Plotter
       LeftPoint = (int)Math.Round(Mul * oldX);
       RightPoint = (int)Math.Round(Mul * newX);
       */
-      ColorImageBox.Image = ColorImg.Copy(new Rectangle(L, 0, R - L, ColorImageBox.Height));
+      //ColorImageBox.Image = ColorImg.Copy(new Rectangle(L, 0, R - L, ColorImageBox.Height));
+      ColorImageBox.Image = ColorIMG_Copy(ColorImg, L, R);
+
       ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
     }
+
+    #endregion
 
 
     private void button1_Click(object sender, EventArgs e)
@@ -120,133 +198,161 @@ namespace Plotter
       LeftPoint = 0;
       TB_From.Text = Left.ToString(); TB_To.Text = RightPoint.ToString();
 
-      ColorImageBox.Image = ColorImg.Copy(new Rectangle(LeftPoint, 0, RightPoint, ColorImageBox.Height));
+      //ColorImageBox.Image = ColorImg.Copy(new Rectangle(LeftPoint, 0, RightPoint, ColorImageBox.Height));
+      ColorImageBox.Image = ColorIMG_Copy(ColorImg, LeftPoint, RightPoint);
+
       ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
       PlotNormalisedSignals();
       ClusterLines();
+
+      //Stuff();
     }
 
-    private void ColorMap()
+
+    public Image<Bgr, Byte> ColorIMG_Copy(Image<Bgr, Byte> src, int L, int R)
     {
-      // настроить ZedGraph
-      Stopwatch timer1 = new Stopwatch();
-      long l = 0;
-      GraphPane pane = ZDC_ColorMap.GraphPane;
-      pane.CurveList.Clear();
-      pane.XAxis.Title.Text = "Ось X";
-      pane.XAxis.Title.Text = "Ось Y";
+      Image<Bgr, Byte> res = new Image<Bgr, byte>(R - L + 1, src.Height, new Bgr(0,0,0));
 
 
-      LineItem myCurve;
-      // разбить на линии zedgraph
+      int width = res.Width;
+      int height = res.Height;
+      int N = 0;
+      byte[, ,] srcDATA = src.Data;
+      byte[, ,] resDATA = res.Data;
 
-      Dictionary<int, SingleNeuron> Neurons = NeuronDataManager.Neurons;
-
-      //List<List<PointD>>[] Sparkles = new List<List<PointD>>[Neurons.Count];
-
-      int HeightOfLine = 1; // ZDC_ColorMap.Height / Neurons.Count;
-      int VerticalSpacing = HeightOfLine;
-      int DiscretisationRate = 5;
-
-      double[] x = new double[5];
-      double[] y = new double[5];
-      double LocalMax;
-      double TotalMax;
-      double candidate;
-      double r;
-      double rel;
-      double x0;
-      double y0;
-      Color col;
-      List<PointD> tmpList = new List<PointD>();
-      PointD[] tmpArr;
-      foreach (KeyValuePair<int, SingleNeuron> pair in Neurons) // НЕЙРОНЫ
-      {
-        timer1.Start();
-        /*
-        double TotalMax = double.MinValue;
-        double candidate = TotalMax;
-        for (int i = 0; i < pair.Value.Sparkles.Count; i++)
+      for (int y = 0; y < height && y < src.Height; y++)
+        for (int x = 0; x < width && x < src.Width; x++)
         {
-          candidate = pair.Value.Sparkles[i].Max(p => p.Y);
-          if ( TotalMax < candidate )
-          TotalMax = candidate;
-        }
-        */
+          resDATA[y, x, 0] = srcDATA[y, x + L, 0];
+          resDATA[y, x, 1] = srcDATA[y, x + L, 1];
+          resDATA[y, x, 2] = srcDATA[y, x + L, 2];
+        }                        
+
+      return res;
+    }
+
+
+
+    //private void ColorMap()
+    //{
+    //  // настроить ZedGraph
+    //  Stopwatch timer1 = new Stopwatch();
+    //  long l = 0;
+    //  GraphPane pane = ZDC_ColorMap.GraphPane;
+    //  pane.CurveList.Clear();
+    //  pane.XAxis.Title.Text = "Ось X";
+    //  pane.XAxis.Title.Text = "Ось Y";
+
+
+    //  LineItem myCurve;
+    //  // разбить на линии zedgraph
+
+    //  Dictionary<int, SingleNeuron> Neurons = NeuronDataManager.Neurons;
+
+    //  //List<List<PointD>>[] Sparkles = new List<List<PointD>>[Neurons.Count];
+
+    //  int HeightOfLine = 1; // ZDC_ColorMap.Height / Neurons.Count;
+    //  int VerticalSpacing = HeightOfLine;
+    //  int DiscretisationRate = 5;
+
+    //  double[] x = new double[5];
+    //  double[] y = new double[5];
+    //  double LocalMax;
+    //  double TotalMax;
+    //  double candidate;
+    //  double r;
+    //  double rel;
+    //  double x0;
+    //  double y0;
+    //  Color col;
+    //  List<PointD> tmpList = new List<PointD>();
+    //  PointD[] tmpArr;
+    //  foreach (KeyValuePair<int, SingleNeuron> pair in Neurons) // НЕЙРОНЫ
+    //  {
+    //    timer1.Start();
+    //    /*
+    //    double TotalMax = double.MinValue;
+    //    double candidate = TotalMax;
+    //    for (int i = 0; i < pair.Value.Sparkles.Count; i++)
+    //    {
+    //      candidate = pair.Value.Sparkles[i].Max(p => p.Y);
+    //      if ( TotalMax < candidate )
+    //      TotalMax = candidate;
+    //    }
+    //    */
 
         
-        for (int sparkleID = 0; sparkleID < pair.Value.Sparkles.Count; sparkleID++) // ВСПЫШКИ
-        {
-          //tmpList = pair.Value.Sparkles[sparkleID];
-          tmpArr = pair.Value.Sparkles[sparkleID].ToArray();
-          TotalMax = tmpArr.Max(p => p.Y);
+    //    for (int sparkleID = 0; sparkleID < pair.Value.Sparkles.Count; sparkleID++) // ВСПЫШКИ
+    //    {
+    //      //tmpList = pair.Value.Sparkles[sparkleID];
+    //      tmpArr = pair.Value.Sparkles[sparkleID].ToArray();
+    //      TotalMax = tmpArr.Max(p => p.Y);
 
 
-          for (int intsparkleID = 0; intsparkleID < tmpArr.Length; intsparkleID += DiscretisationRate) // ВНУТРИ ВСПЫШЕК
-          {
-            //
-            LocalMax = tmpArr[intsparkleID].Y;
-            candidate = LocalMax;
-            for (int k = intsparkleID + 1; k < DiscretisationRate && k < tmpArr.Length; k++)
-            {
-              candidate = tmpArr[k].Y;
-              if (LocalMax < candidate)
-                LocalMax = candidate;
-            }
+    //      for (int intsparkleID = 0; intsparkleID < tmpArr.Length; intsparkleID += DiscretisationRate) // ВНУТРИ ВСПЫШЕК
+    //      {
+    //        //
+    //        LocalMax = tmpArr[intsparkleID].Y;
+    //        candidate = LocalMax;
+    //        for (int k = intsparkleID + 1; k < DiscretisationRate && k < tmpArr.Length; k++)
+    //        {
+    //          candidate = tmpArr[k].Y;
+    //          if (LocalMax < candidate)
+    //            LocalMax = candidate;
+    //        }
             
-            //
-            x0 = tmpArr[intsparkleID].X;
-            x[0] = x0;
-            x[1] = x0 + DiscretisationRate;
-            x[2] = x0 + DiscretisationRate;
-            x[3] = x0;
-            x[4] = x0;
+    //        //
+    //        x0 = tmpArr[intsparkleID].X;
+    //        x[0] = x0;
+    //        x[1] = x0 + DiscretisationRate;
+    //        x[2] = x0 + DiscretisationRate;
+    //        x[3] = x0;
+    //        x[4] = x0;
 
-            y0 = pair.Value.ID;
-            y[0] = ( y0 + 1 )* HeightOfLine;
-            y[1] = (y0 + 1) * HeightOfLine;
-            y[2] = y0 * HeightOfLine;
-            y[3] = y0 * HeightOfLine;
-            y[4] = (y0 + 1) * HeightOfLine;
+    //        y0 = pair.Value.ID;
+    //        y[0] = ( y0 + 1 )* HeightOfLine;
+    //        y[1] = (y0 + 1) * HeightOfLine;
+    //        y[2] = y0 * HeightOfLine;
+    //        y[3] = y0 * HeightOfLine;
+    //        y[4] = (y0 + 1) * HeightOfLine;
 
-            //
-            r = LocalMax / TotalMax * (740 - 380) + 380;
-            col =  Plotter.Colors.waveToColor(r);
-            myCurve = pane.AddCurve("", x, y, col, SymbolType.None);
-            myCurve.Line.Fill = new ZedGraph.Fill(col);
+    //        //
+    //        r = LocalMax / TotalMax * (740 - 380) + 380;
+    //        col =  Plotter.Colors.waveToColor(r);
+    //        myCurve = pane.AddCurve("", x, y, col, SymbolType.None);
+    //        myCurve.Line.Fill = new ZedGraph.Fill(col);
             
-            //ZDC_ColorMap.AxisChange();
-            //ZDC_ColorMap.Invalidate();
-            //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + sparkleID.ToString() + "_" + intsparkleID.ToString() + ".png");
-          }
-        }
+    //        //ZDC_ColorMap.AxisChange();
+    //        //ZDC_ColorMap.Invalidate();
+    //        //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + sparkleID.ToString() + "_" + intsparkleID.ToString() + ".png");
+    //      }
+    //    }
      
-        //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + pair.Value.ID.ToString() + ".png");
-        //ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\img_" + pair.Value.ID.ToString() + ".png");
-        timer1.Stop();
-        l += timer1.ElapsedMilliseconds;
-      }
+    //    //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_" + pair.Value.ID.ToString() + ".png");
+    //    //ZDC_ColorMap.GetImage().Save(@"C:\Users\Админ\Desktop\НИР\EXPERIMENTS\Separated\TEST\img_" + pair.Value.ID.ToString() + ".png");
+    //    timer1.Stop();
+    //    l += timer1.ElapsedMilliseconds;
+    //  }
 
-      timer1.Stop();
+    //  timer1.Stop();
       
-      // подписать оси
-      // для каждого нейрона получить окраску вспышек
-      // нарисовать тепловую карту 
-      //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_FINAL.png");
-      timer1.Start();
-      Size oldSize = ZDC_ColorMap.Size;
-      ZDC_ColorMap.Size = new Size(8700, 92 * 50);
-      ZDC_ColorMap.AxisChange();
-      ZDC_ColorMap.Invalidate();
-      ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\img_FINAL.png");
-      ZDC_ColorMap.Size = oldSize;
-      timer1.Stop();
-      l = timer1.ElapsedMilliseconds;
-      //5740121
-      //1771624
+    //  // подписать оси
+    //  // для каждого нейрона получить окраску вспышек
+    //  // нарисовать тепловую карту 
+    //  //ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\2CH_65 part 3\img_FINAL.png");
+    //  timer1.Start();
+    //  Size oldSize = ZDC_ColorMap.Size;
+    //  ZDC_ColorMap.Size = new Size(8700, 92 * 50);
+    //  ZDC_ColorMap.AxisChange();
+    //  ZDC_ColorMap.Invalidate();
+    //  ZDC_ColorMap.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\Processed\Processed\img_FINAL.png");
+    //  ZDC_ColorMap.Size = oldSize;
+    //  timer1.Stop();
+    //  l = timer1.ElapsedMilliseconds;
+    //  //5740121
+    //  //1771624
       
-    }
-
+    //}
 
     private Image<Bgr, Byte> IMGColorMap()
     {
@@ -347,6 +453,8 @@ namespace Plotter
 
       return Normalised;
     }
+
+
     private List<List<List<PointD>>> GetNormalisedSparkles()
     {
       double TotalMax = double.MinValue;
@@ -379,20 +487,23 @@ namespace Plotter
 
       return res;
     }
+  
     private void PlotNormalisedSignals()
     {
       List<List<double>> Normalised = GetNormalisedData();
 
       List<double> X = new List<double>();
       for (int i = 0; i < Normalised[0].Count; i++)
-        X.Add(i);
+        X.Add(1000 / GlobalVar.FPS * i);
 
       GraphPane pane1 = ZDC_ColorMap.GraphPane;
       pane1.XAxis.Title.Text = "Время (мс)";
       pane1.YAxis.Title.Text = "Номер нейрона";
 
       pane1.CurveList.Clear();
-      pane1.XAxis.Scale.Max = X.Count + 5;
+      //pane1.XAxis.Scale.Max = X.Count + 5;
+      pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * X.Count + 5;
+
       pane1.YAxis.Scale.Max = 1;
 
       for (int i = 0; i < Normalised.Count; i++)
@@ -493,10 +604,6 @@ namespace Plotter
       }
       jj = 2;
       
-
-
-
-
       /*
       double Max = -1;
       for (int i = 0; i < Normalised.Count; i++)
@@ -622,32 +729,71 @@ namespace Plotter
       GraphPane pane1 = ZDC_OpticalPlot.GraphPane;
       pane1.XAxis.Title.Text = "t (cек)";
       pane1.YAxis.Title.Text = "Номер кластера";
-      
-      
-      pane1.XAxis.Scale.Max = 3187;
+
+
+      if (GlobalVar.channel_id == 65) pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * 3187 + 5;
+      else pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * 9519;
 
       pane1.CurveList.Clear();
       double[] X = new double[2];
       double[] Y = new double[2];
 
-      double FPS = 24;
-      double clustTimer = 25000;
-      double T = clustTimer / FPS;
+      double T = GlobalVar.clustTimer / GlobalVar.FPS;
+      //double T = GlobalVar.clustTimer;
+
+
+      int Width;
+      double Disp;
+      Stuff(out Width, out Disp);
+
+      int inc = 0;
+      double[] X_Blur = new double[2 * Width + 1];
+      double[] Y_Blur = new double[2 * Width + 1];
+
+      double[] TotalY = new double[(int)pane1.XAxis.Scale.Max];
 
       PointPairList list1;
       LineItem myCurve1;
-      List<List<double>> clusters = GetClustersFromFile(64);
+      List<List<double>> clusters = GetClustersFromFile(GlobalVar.channel_id);
       for (int i = 0; i < clusters.Count; i++)
       {
         for (int j = 0; j < clusters[i].Count; j++)
         {
-          X[0] = X[1] = clusters[i][j] / T;
+          X[0] = X[1] = Math.Round(clusters[i][j] / T);
           Y[0] = i;
           Y[1] = i + 1;
           list1 = new PointPairList(X.ToArray(), Y.ToArray());
           myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+
+          inc = 0;
+          //--------------- строим гауссову кривую для 
+          for (int n = -Width; n < Width + 1; n++)
+          {
+            X_Blur[inc] = X[0] + n;
+            Y_Blur[inc] = Math.Exp(-0.5 * Math.Pow((X_Blur[n + Width] - X[0])/Disp, 2)) / (Disp * Math.Sqrt(2 * Math.PI));
+            inc++;
+          }
+
+           // нормализуем
+          double max = Y_Blur.ToList().Max();
+          for (int n = 0; n < Y_Blur.Length; n++)
+            Y_Blur[n] = Y_Blur[n] / max;
+
+          list1 = new PointPairList(X_Blur.ToArray(), Y_Blur.ToArray());
+          //myCurve1 = pane1.AddCurve("", list1, Color.Green, SymbolType.None);
+
+          for (int n = 0; n < X_Blur.Length; n++)
+            TotalY[(int)X_Blur[n]] += Y_Blur[n];
+
+
         }
       }
+
+      double[] TotalX = new double[(int)pane1.XAxis.Scale.Max];
+      for (int i = 0; i < TotalX.Length; i++) TotalX[i] = i;
+      list1 = new PointPairList(TotalX.ToArray(), TotalY.ToArray());
+      myCurve1 = pane1.AddCurve("", list1, Color.Red, SymbolType.None);
+
 
       ZDC_OpticalPlot.AxisChange();
       ZDC_OpticalPlot.Invalidate();
@@ -656,7 +802,7 @@ namespace Plotter
     //load clusters from file
     private List<List<double>> GetClustersFromFile(int Channel)
     {
-      string[] lines = File.ReadAllLines(@"L:\Crop\export_" + Channel.ToString());
+      string[] lines = File.ReadAllLines(GlobalVar.cluster_path);
 
       List<List<double>> res = new List<List<double>>();
       List<double> tmp = new List<double>();
@@ -680,71 +826,102 @@ namespace Plotter
 
     }
 
-    private void BTN_AdjustZedGraphs_Click(object sender, EventArgs e)
+
+    //------------------------
+    private void Stuff(out int par1, out double par2)
     {
-      bool test = Int32.TryParse(TB_From.Text, out LeftPoint);
-      test = Int32.TryParse(TB_To.Text, out RightPoint);
-      MoveImage(LeftPoint, RightPoint);
-    }
 
-    private void Form2_Load(object sender, EventArgs e)
-    {
-      ZedGraph.MasterPane masterPane = ZDC_ColorMap.MasterPane;
-      ZDC_ColorMap.IsSynchronizeXAxes = true;
-      ZDC_ColorMap.IsSynchronizeYAxes = false;
+      // Шаг 1 - ищем дисперсию длин промежуток вспышек.
+      List<double> neurons_sparkle_dispersions = new List<double>();
+      List<double> neurons_sparkle_averages = new List<double>();
 
-
-      //masterPane.PaneList.Clear();
-      masterPane.Add(ZDC_OpticalPlot.GraphPane);
-
-      using (Graphics g = CreateGraphics())
+      double avg = 0;
+      double disp = 0;
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
       {
-        // Графики будут размещены в один столбец друг под другом
-          masterPane.SetLayout (g, PaneLayout.SingleColumn);
-      }
+        avg = 0;
+        disp = 0;
       
-      int topMargin = 0;
-      int leftMargin = 25;
-      int bottomMargin = 25;
-      int rightMargin = 25;
-      int spacingY = 1;
-      float labelGapY = 1;
-      float labelGapX = 1;
+        List<double[]> sp_indexes = NeuronDataManager.Neurons[i].SparkleIndexes;
+        if (sp_indexes.Count == 0)
+        {
+          neurons_sparkle_dispersions.Add(0);
+          neurons_sparkle_averages.Add(0);
+          continue;
+        }
+
+        for (int j = 0; j < sp_indexes.Count; j++)
+          avg += sp_indexes[j][1] - sp_indexes[j][0];
+        avg /= sp_indexes.Count;
 
 
-      //masterPane[0].Chart.Rect = new RectangleF(leftMargin, topMargin, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - topMargin - spacingY);
-      //masterPane[1].Chart.Rect = new RectangleF(leftMargin, ZDC_ColorMap.Height / 2 + spacingY, ZDC_ColorMap.Width - leftMargin - rightMargin, ZDC_ColorMap.Height / 2 - spacingY - bottomMargin);
+        for (int j = 0; j < sp_indexes.Count; j++)
+          disp += Math.Pow(sp_indexes[j][1] - sp_indexes[j][0] - avg, 2);
 
-      masterPane[0].Margin.Top = 0.0f;
-      masterPane[0].Margin.Left = 0.0f;
-      masterPane[0].Margin.Right = 20.0f; //20
-      masterPane[0].Margin.Bottom = 0.0f;
+        disp /= sp_indexes.Count;
+        neurons_sparkle_dispersions.Add(Math.Sqrt(disp));
+        neurons_sparkle_averages.Add(avg);
+      }
 
-      masterPane[1].Margin.Top = 10.0f; //10
-      masterPane[1].Margin.Left = 0.0f;
-      masterPane[1].Margin.Right = 0.0f;
-      masterPane[1].Margin.Bottom = 0.0f;
 
-      masterPane[0].XAxis.Title.IsVisible = false;
-      masterPane[0].YAxis.Title.IsVisible = false;
-      masterPane[0].Title.IsVisible = false;
-      masterPane[0].XAxis.Scale.IsVisible = false;
-      masterPane[0].XAxis.Scale.LabelGap = labelGapY;
-      masterPane.InnerPaneGap = 0.0f;
-      masterPane[1].XAxis.Title.IsVisible = false;
-      masterPane[1].YAxis.Title.IsVisible = false;
-      masterPane[1].Title.IsVisible = false;
-      masterPane[1].XAxis.Scale.LabelGap = labelGapX;
-      masterPane[1].YAxis.Scale.LabelGap = labelGapY;
-      ZDC_ColorMap.AxisChange();
-      ZDC_ColorMap.Invalidate();
+      //собственно, средняя полуширина вспышки 
+      double avg_width = neurons_sparkle_averages.Sum() / neurons_sparkle_averages.Count;
+      double avg_width_disp = neurons_sparkle_dispersions.Sum() / neurons_sparkle_dispersions.Count;
 
-      //masterPane.Margin.Bottom = 5;
-      int rr = (int)masterPane[0].Chart.Rect.Width;
-      RectangleF rect = masterPane.Rect;
-    
+
+      //  дисперсия окон ширины
+      for (int i = 0; i < neurons_sparkle_averages.Count; i++)
+      {
+        disp += Math.Pow(neurons_sparkle_averages[i] - avg_width, 2);
+      }
+      disp = Math.Sqrt(disp / neurons_sparkle_averages.Count);
+
+
+        //
+      int avgW2 = (int)Math.Round(avg_width / 2);
+
+      par1 = Convert.ToInt32(avgW2);
+      //par2 = avg_width_disp;
+      par2 = disp;
+
+      //double FPS = 24;
+      //double clustTimer = 25000;
+      //double T = clustTimer / FPS;
+
+
+      
+      //List<List<double>> Cluster = GetClustersFromFile(GlobalVar.channel_id);
+
+
+
     }
 
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void export_Click(object sender, EventArgs e)
+    {
+
+    }
+
+
+  
   }
 }
 
