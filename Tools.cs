@@ -306,5 +306,46 @@ namespace Plotter
         return Math.Sqrt(result / n);
       }
     }
+
+    public static class Statistics
+    {
+
+      public static double StdDev(List<double> input)
+      {
+        double avg = input.Sum() / (double)input.Count();
+        double stddev = 0;
+
+        for (int i = 0; i < input.Count; i++)
+        {
+          stddev += (input[i] - avg) * (input[i] - avg);
+        }
+
+        stddev = Math.Sqrt(stddev / (((double)input.Count - 1.0)));
+
+        return stddev;
+      }
+
+      public static double PearsonCor(List<double> A, List<double> B)
+      {
+        
+        int N = A.Count;
+        double stdA = Tools.Statistics.StdDev(A);
+        double stdB = Tools.Statistics.StdDev(B);
+
+        double avgA = A.Sum() / A.Count;
+        double avgB = B.Sum() / B.Count;
+
+        double T = 0;
+        for (int i = 0; i < N; i++)
+          T += (A[i] - avgA) * (B[i] - avgB) / (stdA * stdB);
+
+        T = T / (N - 1);
+
+        return T;
+      }
+
+      
+
+    }
   }
 }

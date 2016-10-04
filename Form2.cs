@@ -112,7 +112,7 @@ namespace Plotter
     {
       TB_From.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Min.ToString();
       TB_To.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Max.ToString();
-      BTN_AdjustZedGraphs.PerformClick();
+      //BTN_AdjustZedGraphs.PerformClick();
     }
 
 
@@ -203,7 +203,10 @@ namespace Plotter
 
       ColorImageBox.SizeMode = PictureBoxSizeMode.StretchImage;
       PlotNormalisedSignals();
-      ClusterLines();
+      Tuple<double[], double[]> corr_data = ClusterLines();
+
+      //TestCorr();
+      Correlate(corr_data);
 
       //Stuff();
     }
@@ -454,7 +457,6 @@ namespace Plotter
       return Normalised;
     }
 
-
     private List<List<List<PointD>>> GetNormalisedSparkles()
     {
       double TotalMax = double.MinValue;
@@ -494,7 +496,7 @@ namespace Plotter
 
       List<double> X = new List<double>();
       for (int i = 0; i < Normalised[0].Count; i++)
-        X.Add(1000 / GlobalVar.FPS * i);
+        X.Add(i);
 
       GraphPane pane1 = ZDC_ColorMap.GraphPane;
       pane1.XAxis.Title.Text = "Время (мс)";
@@ -502,7 +504,7 @@ namespace Plotter
 
       pane1.CurveList.Clear();
       //pane1.XAxis.Scale.Max = X.Count + 5;
-      pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * X.Count + 5;
+      pane1.XAxis.Scale.Max = X.Count + 5;
 
       pane1.YAxis.Scale.Max = 1;
 
@@ -724,15 +726,90 @@ namespace Plotter
       }
     }
 
-    private void ClusterLines()
+    private Tuple<double[], double[]> ClusterLines()
     {
+      //GraphPane pane1 = ZDC_OpticalPlot.GraphPane;
+      //pane1.XAxis.Title.Text = "t (cек)";
+      //pane1.YAxis.Title.Text = "Номер кластера";
+
+
+      //if (GlobalVar.channel_id == 65) pane1.XAxis.Scale.Max = 3187 + 5;
+      //else pane1.XAxis.Scale.Max = 9519;
+
+      //pane1.CurveList.Clear();
+      //double[] X = new double[2];
+      //double[] Y = new double[2];
+
+      //double T = GlobalVar.clustTimer / GlobalVar.FPS;
+      ////double T = GlobalVar.clustTimer;
+
+
+      //int Width;
+      //double Disp;
+      //Stuff(out Width, out Disp);
+
+      //int inc = 0;
+      //double[] X_Blur = new double[2 * Width + 1];
+      //double[] Y_Blur = new double[2 * Width + 1];
+
+      //double[] TotalY = new double[(int)pane1.XAxis.Scale.Max];
+
+      //PointPairList list1;
+      //LineItem myCurve1;
+      //List<List<double>> clusters = GetClustersFromFile(GlobalVar.channel_id);
+      //for (int i = 0; i < clusters.Count; i++)
+      //{
+      //  for (int j = 0; j < clusters[i].Count; j++)
+      //  {
+      //    X[0] = X[1] = Math.Round(clusters[i][j] / T);
+      //    Y[0] = i;
+      //    Y[1] = i + 1;
+      //    list1 = new PointPairList(X.ToArray(), Y.ToArray());
+      //    myCurve1 = pane1.AddCurve("", list1, Color.Black, SymbolType.None);
+
+      //    inc = 0;
+      //    //--------------- строим гауссову кривую для 
+      //    for (int n = -Width; n < Width + 1; n++)
+      //    //for (int n = 0; n < 2 * Width; n++)
+      //    {
+      //      X_Blur[inc] = X[0];
+      //      Y_Blur[inc] = Math.Exp(-0.5 * Math.Pow((X_Blur[n + Width] - X[0])/Disp, 2)) / (Disp * Math.Sqrt(2 * Math.PI));
+      //      inc++;
+      //    }
+
+      //     // нормализуем
+      //    double max = Y_Blur.ToList().Max();
+      //    for (int n = 0; n < Y_Blur.Length; n++)
+      //      Y_Blur[n] = Y_Blur[n] / max;
+
+      //    list1 = new PointPairList(X_Blur.ToArray(), Y_Blur.ToArray());
+      //    //myCurve1 = pane1.AddCurve("", list1, Color.Green, SymbolType.None);
+
+      //    for (int n = 0; n < X_Blur.Length; n++)
+      //      TotalY[(int)X_Blur[n]] += Y_Blur[n];
+
+
+      //  }
+      //}
+
+      //double[] TotalX = new double[(int)pane1.XAxis.Scale.Max];
+      //for (int i = 0; i < TotalX.Length; i++) TotalX[i] = i;
+      //list1 = new PointPairList(TotalX.ToArray(), TotalY.ToArray());
+      //myCurve1 = pane1.AddCurve("", list1, Color.Red, SymbolType.None);
+
+
+      //ZDC_OpticalPlot.AxisChange();
+      //ZDC_OpticalPlot.Invalidate();
+
+      //return new Tuple<double[], double[]>(TotalX, TotalY);
+
       GraphPane pane1 = ZDC_OpticalPlot.GraphPane;
       pane1.XAxis.Title.Text = "t (cек)";
       pane1.YAxis.Title.Text = "Номер кластера";
 
 
-      if (GlobalVar.channel_id == 65) pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * 3187 + 5;
-      else pane1.XAxis.Scale.Max = 1000 / GlobalVar.FPS * 9519;
+      if (GlobalVar.channel_id == 65) pane1.XAxis.Scale.Max = 3187 + 5;
+      else pane1.XAxis.Scale.Max =  9519;
 
       pane1.CurveList.Clear();
       double[] X = new double[2];
@@ -770,11 +847,11 @@ namespace Plotter
           for (int n = -Width; n < Width + 1; n++)
           {
             X_Blur[inc] = X[0] + n;
-            Y_Blur[inc] = Math.Exp(-0.5 * Math.Pow((X_Blur[n + Width] - X[0])/Disp, 2)) / (Disp * Math.Sqrt(2 * Math.PI));
+            Y_Blur[inc] = Math.Exp(-0.5 * Math.Pow((X_Blur[n + Width] - X[0]) / Disp, 2)) / (Disp * Math.Sqrt(2 * Math.PI));
             inc++;
           }
 
-           // нормализуем
+          // нормализуем
           double max = Y_Blur.ToList().Max();
           for (int n = 0; n < Y_Blur.Length; n++)
             Y_Blur[n] = Y_Blur[n] / max;
@@ -797,6 +874,7 @@ namespace Plotter
 
       ZDC_OpticalPlot.AxisChange();
       ZDC_OpticalPlot.Invalidate();
+      return new Tuple<double[], double[]>(TotalX, TotalY);
     }
 
     //load clusters from file
@@ -826,7 +904,6 @@ namespace Plotter
 
     }
 
-
     //------------------------
     private void Stuff(out int par1, out double par2)
     {
@@ -837,6 +914,22 @@ namespace Plotter
 
       double avg = 0;
       double disp = 0;
+                       /*
+      List<List<PointD>> tmp = new List<List<PointD>>();
+      List<double> valList = new List<double>();
+      for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
+      {
+        tmp = NeuronDataManager.Neurons[i].Sparkles;
+        
+        foreach (var I in tmp) avg += I.Count;
+        avg /= tmp.Count;
+        valList.Add(avg);
+      }
+
+      double width_stddev = Tools.Statistics.StdDev(valList);
+      double width_avg = valList.Sum() / valList.Count;
+                            */
+
       for (int i = 0; i < NeuronDataManager.Neurons.Count; i++)
       {
         avg = 0;
@@ -894,26 +987,230 @@ namespace Plotter
 
 
 
+
+    }
+
+    private void Correlate(Tuple<double[], double[]> electro_sigXY)
+    {
+      List<double> res_corr_values = new List<double>();
+      List<List<double>> Normalised = GetNormalisedData();
+
+      double corrVal;
+      corrVal = 0;
+
+
+      List<double> sign_tmp;
+      List<double> electro_sig = new List<double>(electro_sigXY.Item2);
+
+      double m = electro_sig.Max();
+      for (int i = 0; i < electro_sig.Count; i++)
+        electro_sig[i] /= m;
+
+
+      List<double> tmp = new List<double>();
+
+      double img_height = 0;
+
+      double[] x = new double[250];
+      for (int i = 0; i < 250; i++) x[i] = -250 + i;
+
+      GraphPane pane1 = ZDC_ColorMap.GraphPane;
+      pane1.XAxis.Title.Text = "Время (с)";
+      pane1.YAxis.Title.Text = "Номер нейрона";
+
+      pane1.CurveList.Clear();
+      
+
+
+      // для всех нейронов
+      for (int i = 0; i < Normalised.Count; i++)
+      {
+        tmp.Clear();
+        // осуществляем сдвиги и ищем на каждом корреляцию
+        for (int shift = - 10 * 25; shift <= 0; shift++)
+        {
+          corrVal = 0;
+        
+          sign_tmp = Normalised[i];
+          //corrVal += CountCorr(electro_sig, sign_tmp, shift);
+          corrVal += PearsonCountCorr(electro_sig, sign_tmp, shift);
+          //записываем в список
+          tmp.Add(corrVal);
+        }
+
+        //рисуем график
+        img_height = (img_height > tmp.Max()) ? img_height : tmp.Max();
+        PointPairList list1 = new PointPairList(x, tmp.ToArray());
+
+        LineItem myCurve1 = pane1.AddCurve("", list1, Plotter.Colors.waveToColor(i * (740 - 380)/Normalised.Count + 380), SymbolType.None);
+
+        pane1.XAxis.Scale.Max = 250 + 5;
+        pane1.YAxis.Scale.Max = img_height * 1.05;
+        ZDC_ColorMap.AxisChange();
+        ZDC_ColorMap.Invalidate();
+        pane1.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\correlations" + i.ToString() + ".png");
+      }
+
+      /*
+      for (int i = 0; i < Normalised.Count; i++)
+      {
+        sign_tmp = Normalised[i];
+        for (int k = 0; k < sign_tmp.Count; k++)
+          corrVal += electro_sig.Item2[k] * sign_tmp[k]; 
+      }
+      corrVal /= electro_sig.Item2.Length * Normalised.Count;
+        */
+        //pane1.XAxis.Scale.Max = 250 + 5;
+        //pane1.YAxis.Scale.Max = img_height * 1.05;
+      //Image bp1 = ZDC_ColorMap.GetImage();
+      //ZDC_ColorMap.AxisChange();
+      //ZDC_ColorMap.Invalidate();
+
+      //pane1.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\correlations.png");
+    }
+
+
+    private List<double> Crop(double[] X, int pos)
+    {
+      List<double> res = new List<double>();
+
+      for (int i = pos; i < 0; i++)
+        res.Add(0);
+      
+      for (int i = 0; i < X.Length - Math.Abs(pos); i++)
+        res.Add(X[i]);
+
+        return res;
     }
 
 
 
+    private double CountCorr(List<double> small, List<double> big, int pos0)
+    {
+      //if (pos0 >= big.Count || pos0 < 0) throw new Exception("wrong pos");
+      //if (small.Count > big.Count || Math.Abs(pos0) >= small.Count) throw new Exception("wrong sizes");
+       
+      double res = 0;
 
+      if (pos0 < 0)
+      {
+        for (int i = 0; i < small.Count - Math.Abs(pos0); i++)
+        {
+          res += big[i] * small[Math.Abs(pos0) + i];
+        }
 
-  
+        res /= small.Count - Math.Abs(pos0);
+      } 
 
+      if ( pos0 == 0)
+      {
+        for (int i = 0; i < big.Count && i < small.Count; i++)
+        {
+          res += big[i] * small[i];
+        }
 
+        res /= small.Count;
+      }
+      if ( pos0 > 0) 
+      {
+        for (int i = pos0; i < big.Count && i < small.Count; i++)
+          {
+            res += big[i] * small[i - pos0];
+          }
+        res /= big.Count - pos0;
 
+      
+      }
+      /*
+        for (int big_iter = pos0; big_iter < big.Count && big_iter - pos0 < small.Count; big_iter++)
+        {
+          res += small[big_iter - pos0] * big[big_iter];
+        }
+      }
 
+      return res / ( (small.Count + pos0 < big.Count) ? small.Count : big.Count - pos0 );
+       * */
 
+      return res;
 
+    }
 
+    private double PearsonCountCorr(List<double> small, List<double> big, int pos0)
+    {
+      if (pos0 <= -small.Count || pos0 >= big.Count) throw new Exception("!!");
 
+      double res = 0;
+      List<double> A = new List<double>();
+      List<double> B = new List<double>();
 
+      if (pos0 < 0)
+      {
+        A = small.GetRange(-pos0, small.Count + pos0);
+        B = big.GetRange(0, small.Count + pos0);
+        return Tools.Statistics.PearsonCor(A, B);
+      }
+      else if (pos0 == 0)
+      {
+        B = big.GetRange(0, small.Count);
+        return Tools.Statistics.PearsonCor(small, B);
+      }
+      else if (pos0 >= 0 && pos0 + small.Count < big.Count)
+      {
+        B = big.GetRange(pos0, small.Count);
+        return Tools.Statistics.PearsonCor(small, B);
+      }
+      else if (pos0 > 0 && pos0 + small.Count >= big.Count)
+      {
+        A = small.GetRange(pos0, big.Count - pos0);
+        B = big.GetRange(pos0, big.Count - pos0);
+        return Tools.Statistics.PearsonCor(A, B);
+      }
+      
+      return 0;
+    }
 
+    private void TestCorr()
+    {
+      List<double> A = new List<double>();
+      List<double> B = new List<double>();
+      int N = 4;
 
+                   /*
+      for (int i = 0; i < N; i++)
+        A.Add(2));
 
+      for (int i = 0; i < N; i++)
+        B.Add(2);*/
 
+      A.Add(1); A.Add(2); A.Add(3); A.Add(4); A.Add(1); A.Add(2); A.Add(3); A.Add(4); A.Add(1); A.Add(2); A.Add(3); A.Add(4);
+      B.Add(1); B.Add(2); B.Add(3); B.Add(4); B.Add(1); B.Add(2); B.Add(3); B.Add(4); B.Add(1); B.Add(2); B.Add(3); B.Add(4);
+     
+
+      double T = Tools.Statistics.PearsonCor(A, B);
+          /*
+      B.RemoveAt(0);
+      B.RemoveAt(0);
+      B.RemoveAt(0);
+      B.RemoveAt(0);
+      B.RemoveAt(0);
+        */
+      double TT = PearsonCountCorr(A, B, 4);
+          /*
+      A.RemoveAt(0);
+      A.RemoveAt(0);
+      A.RemoveAt(0);
+      A.RemoveAt(0);
+      A.RemoveAt(0);
+        */
+      T = Tools.Statistics.PearsonCor(A, B);
+
+                                           //-0.37796447300922725
+
+      double V = CountCorr(A, B, -1);
+
+    }
+
+     
 
     private void export_Click(object sender, EventArgs e)
     {
