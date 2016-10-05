@@ -344,6 +344,91 @@ namespace Plotter
         return T;
       }
 
+      public static double crossCorrelation(double[] pattern, double[] signal, bool fast = false)
+      {
+        fast = true;
+        if (fast)
+        {
+          int maxShift = (int)(Math.Min(pattern.Length, signal.Length) * .20);
+          double corr;
+          double maxCorr = double.MinValue;
+          double selfCorr1 = 0;
+          double selfCorr2 = 0;
+          int ShiftofMax = 0;
+          for (int i = 0; i < pattern.Length; i++)
+          {
+            selfCorr1 += pattern[i] * pattern[i];
+          }
+          for (int i = 0; i < signal.Length; i++)
+          {
+            selfCorr2 += signal[i] * signal[i];
+          }
+          selfCorr1 = Math.Max(selfCorr1, selfCorr2);
+          maxCorr = 0;
+          for (int shift = 0; shift < maxShift; shift++)
+          {
+            corr = 0;
+            for (int i = 0; i < pattern.Length && i + shift < signal.Length; i++)
+            {
+              corr += pattern[i] * signal[i + shift];
+            }
+
+            if (corr > maxCorr)
+            {
+              maxCorr = corr;
+              ShiftofMax = shift;
+            }
+            corr = 0;
+            for (int i = 0; i + shift < pattern.Length && i < signal.Length; i++)
+            {
+              corr += pattern[i + shift] * signal[i];
+            }
+
+            if (corr > maxCorr)
+            {
+              maxCorr = corr;
+              ShiftofMax = -shift;
+            }
+
+          }
+          return maxCorr / selfCorr1;
+        }
+
+        int count1 = pattern.Count(), count2 = signal.Count();
+        double[] self1arr = new double[count1], self2arr = new double[count2], outarr = new double[Math.Max(count1, count2)];
+        ALGLIBExpress.corrr1d(pattern, count1, pattern, count1, out self1arr);
+        ALGLIBExpress.corrr1d(signal, count2, signal, count2, out self2arr);
+        double self1 = self1arr.Max();
+        double self2 = self2arr.Max();
+        double self1m = self1arr.Min();
+        double self2m = self2arr.Min();
+        double max = Math.Max(self1, self2);
+        double min = Math.Min(self1m, self2m);
+        ALGLIBExpress.corrr1d(pattern, count1, signal, count2, out outarr);
+        double result = outarr.Take((int)(outarr.Length * 0.1)).Max();
+
+        double max2 = double.MinValue;
+        int shift_of_max = 0;
+        int takePersant = 10;
+        for (int shift = 0; shift + outarr.Length / 2 < outarr.Length && shift < outarr.Length * takePersant / 100; shift++)
+        {
+          double x = Math.Max(outarr[shift], outarr[outarr.Length / 2 + shift]);
+          if (x > max2)
+          {
+            max2 = x;
+            shift_of_max = shift;
+          }
+        }
+        //поправка на сдвиг
+        double k = 2 * (Math.Abs(outarr.Length / 2 - shift_of_max) / (double)outarr.Length);
+        if (outarr.Min() < 0)
+          self1 = 0;
+        if (max != 0)
+          return result / (max - min) * k;
+        else return 0;
+      }
+
+
       
 
     }

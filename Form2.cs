@@ -105,14 +105,14 @@ namespace Plotter
       int rr = (int)masterPane[0].Chart.Rect.Width;
       RectangleF rect = masterPane.Rect;
 
-         ZDC_OpticalPlot.GraphPane.AxisChangeEvent += GraphPane_AxisChangeEvent;
+      ZDC_OpticalPlot.GraphPane.AxisChangeEvent += GraphPane_AxisChangeEvent;
     }
 
     private void GraphPane_AxisChangeEvent(GraphPane pane)
     {
       TB_From.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Min.ToString();
       TB_To.Text = ZDC_ColorMap.MasterPane[0].XAxis.Scale.Max.ToString();
-      //BTN_AdjustZedGraphs.PerformClick();
+      BTN_AdjustZedGraphs.PerformClick();
     }
 
 
@@ -206,8 +206,11 @@ namespace Plotter
       Tuple<double[], double[]> corr_data = ClusterLines();
 
       //TestCorr();
-      Correlate(corr_data);
-
+      //Correlate(corr_data);
+               
+      Form3 window_x = new Form3();
+      window_x.Show();
+            
       //Stuff();
     }
 
@@ -357,6 +360,7 @@ namespace Plotter
       
     //}
 
+#region
     private Image<Bgr, Byte> IMGColorMap()
     {
       // настроить ZedGraph
@@ -725,6 +729,8 @@ namespace Plotter
 
       }
     }
+#endregion
+
 
     private Tuple<double[], double[]> ClusterLines()
     {
@@ -1013,28 +1019,75 @@ namespace Plotter
 
       double[] x = new double[250];
       for (int i = 0; i < 250; i++) x[i] = -250 + i;
+                       /*
+      for (int i = 0; i < Normalised.Count; i++)
+        tmp.Add(Tools.Statistics.crossCorrelation(electro_sig.ToArray(), Normalised[i].ToArray(), true));
+                     */
+
+
+
+
 
       GraphPane pane1 = ZDC_ColorMap.GraphPane;
       pane1.XAxis.Title.Text = "Время (с)";
       pane1.YAxis.Title.Text = "Номер нейрона";
 
       pane1.CurveList.Clear();
-      
-
 
       // для всех нейронов
       for (int i = 0; i < Normalised.Count; i++)
       {
         tmp.Clear();
         // осуществляем сдвиги и ищем на каждом корреляцию
-        for (int shift = - 10 * 25; shift <= 0; shift++)
-        {
-          corrVal = 0;
-        
-          sign_tmp = Normalised[i];
-          //corrVal += CountCorr(electro_sig, sign_tmp, shift);
-          corrVal += PearsonCountCorr(electro_sig, sign_tmp, shift);
-          //записываем в список
+                           /*
+          int maxShift = (int)(Math.Min(pattern.Length, signal.Length) * .20);
+          double corr;
+          double maxCorr = double.MinValue;
+          double selfCorr1 = 0;
+          double selfCorr2 = 0;
+          int ShiftofMax = 0;
+          for (int i = 0; i < pattern.Length; i++)
+          {
+            selfCorr1 += pattern[i] * pattern[i];
+          }
+          for (int i = 0; i < signal.Length; i++)
+          {
+            selfCorr2 += signal[i] * signal[i];
+          }
+          selfCorr1 = Math.Max(selfCorr1, selfCorr2);
+          maxCorr = 0;
+          for (int shift = 0; shift < maxShift; shift++)
+          {
+            corr = 0;
+            for (int i = 0; i < pattern.Length && i + shift < signal.Length; i++)
+            {
+              corr += pattern[i] * signal[i + shift];
+            }
+
+            if (corr > maxCorr)
+            {
+              maxCorr = corr;
+              ShiftofMax = shift;
+            }
+            corr = 0;
+            for (int i = 0; i + shift < pattern.Length && i < signal.Length; i++)
+            {
+              corr += pattern[i + shift] * signal[i];
+            }
+
+            if (corr > maxCorr)
+            {
+              maxCorr = corr;
+              ShiftofMax = -shift;
+            }
+
+
+
+                            */
+
+
+
+         //записываем в список
           tmp.Add(corrVal);
         }
 
@@ -1042,48 +1095,15 @@ namespace Plotter
         img_height = (img_height > tmp.Max()) ? img_height : tmp.Max();
         PointPairList list1 = new PointPairList(x, tmp.ToArray());
 
-        LineItem myCurve1 = pane1.AddCurve("", list1, Plotter.Colors.waveToColor(i * (740 - 380)/Normalised.Count + 380), SymbolType.None);
+        //LineItem myCurve1 = pane1.AddCurve("", list1, Plotter.Colors.waveToColor(i * (740 - 380) / Normalised.Count + 380), SymbolType.None);
 
         pane1.XAxis.Scale.Max = 250 + 5;
         pane1.YAxis.Scale.Max = img_height * 1.05;
         ZDC_ColorMap.AxisChange();
         ZDC_ColorMap.Invalidate();
-        pane1.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\correlations" + i.ToString() + ".png");
+        //pane1.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\correlations" + i.ToString() + ".png");
       }
-
-      /*
-      for (int i = 0; i < Normalised.Count; i++)
-      {
-        sign_tmp = Normalised[i];
-        for (int k = 0; k < sign_tmp.Count; k++)
-          corrVal += electro_sig.Item2[k] * sign_tmp[k]; 
-      }
-      corrVal /= electro_sig.Item2.Length * Normalised.Count;
-        */
-        //pane1.XAxis.Scale.Max = 250 + 5;
-        //pane1.YAxis.Scale.Max = img_height * 1.05;
-      //Image bp1 = ZDC_ColorMap.GetImage();
-      //ZDC_ColorMap.AxisChange();
-      //ZDC_ColorMap.Invalidate();
-
-      //pane1.GetImage().Save(@"C:\Users\Admin\Desktop\Антон\EXPERIMENTS\correlations.png");
-    }
-
-
-    private List<double> Crop(double[] X, int pos)
-    {
-      List<double> res = new List<double>();
-
-      for (int i = pos; i < 0; i++)
-        res.Add(0);
-      
-      for (int i = 0; i < X.Length - Math.Abs(pos); i++)
-        res.Add(X[i]);
-
-        return res;
-    }
-
-
+    
 
     private double CountCorr(List<double> small, List<double> big, int pos0)
     {
@@ -1184,7 +1204,9 @@ namespace Plotter
 
       A.Add(1); A.Add(2); A.Add(3); A.Add(4); A.Add(1); A.Add(2); A.Add(3); A.Add(4); A.Add(1); A.Add(2); A.Add(3); A.Add(4);
       B.Add(1); B.Add(2); B.Add(3); B.Add(4); B.Add(1); B.Add(2); B.Add(3); B.Add(4); B.Add(1); B.Add(2); B.Add(3); B.Add(4);
-     
+
+      B.Reverse();
+      double U = Tools.Statistics.crossCorrelation(A.ToArray(), B.ToArray());
 
       double T = Tools.Statistics.PearsonCor(A, B);
           /*
@@ -1210,8 +1232,8 @@ namespace Plotter
 
     }
 
-     
 
+   
     private void export_Click(object sender, EventArgs e)
     {
 
