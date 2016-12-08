@@ -66,7 +66,7 @@
       this.zedGraphControl.ScrollMinX = 0D;
       this.zedGraphControl.ScrollMinY = 0D;
       this.zedGraphControl.ScrollMinY2 = 0D;
-      this.zedGraphControl.Size = new System.Drawing.Size(720, 303);
+      this.zedGraphControl.Size = new System.Drawing.Size(710, 303);
       this.zedGraphControl.TabIndex = 1;
       this.zedGraphControl.Load += new System.EventHandler(this.zedGraphControl_Load);
       // 
@@ -104,7 +104,7 @@
       this.AllSignalZedGraph.ScrollMinX = 0D;
       this.AllSignalZedGraph.ScrollMinY = 0D;
       this.AllSignalZedGraph.ScrollMinY2 = 0D;
-      this.AllSignalZedGraph.Size = new System.Drawing.Size(720, 149);
+      this.AllSignalZedGraph.Size = new System.Drawing.Size(710, 209);
       this.AllSignalZedGraph.TabIndex = 1;
       // 
       // label1
@@ -218,7 +218,7 @@
       // NeuronMask
       // 
       this.NeuronMask.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.NeuronMask.Location = new System.Drawing.Point(733, 76);
+      this.NeuronMask.Location = new System.Drawing.Point(723, 76);
       this.NeuronMask.Name = "NeuronMask";
       this.NeuronMask.Size = new System.Drawing.Size(258, 195);
       this.NeuronMask.TabIndex = 2;
@@ -228,7 +228,7 @@
       // NeuronBody
       // 
       this.NeuronBody.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.NeuronBody.Location = new System.Drawing.Point(733, 277);
+      this.NeuronBody.Location = new System.Drawing.Point(723, 277);
       this.NeuronBody.Name = "NeuronBody";
       this.NeuronBody.Size = new System.Drawing.Size(258, 195);
       this.NeuronBody.TabIndex = 2;
@@ -269,7 +269,7 @@
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(1003, 545);
+      this.ClientSize = new System.Drawing.Size(993, 605);
       this.Controls.Add(this.BNT_Destination);
       this.Controls.Add(this.BTN_Import);
       this.Controls.Add(this.BTN_Additional);

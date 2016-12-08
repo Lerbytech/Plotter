@@ -71,7 +71,7 @@ namespace Plotter
       // create neurons
       for (int i = 0; i < files.Length; i++)
       {
-        tempImagePath = Path.GetDirectoryName(files[i]) + @"\..\..\Binary Masks\" + "Signal_" + i + ".png"; 
+        tempImagePath = Directory.GetParent(Path.GetDirectoryName(files[i])).ToString() + @"\Masks\" + "mask_" + i + ".png"; 
         Neurons.Add(i, new SingleNeuron(i, Tools.IO.TxtIO.GetIntensitiesFromFile(files[i]), new Image<Gray, Byte>(tempImagePath)));
       }
     }

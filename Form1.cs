@@ -44,9 +44,12 @@ namespace Plotter
       InitializeComponent();
       GlobalVar.channel_id = 64;
 
-      Path_toSave = GlobalVar.export_path;
-      Path_toLoad = GlobalVar.import_path;
+      //Path_toSave = GlobalVar.export_path;
+      //Path_toLoad = GlobalVar.import_path;
 
+      //Image<Gray, Byte> fff = new Image<Gray, byte>(@"C:\Users\Admin\Desktop\Антон\MIPT.png");
+
+      //fff.Save(@"C:\Users\Admin\Desktop\Антон\MIPT_gray.png");      
       
       //string path = @"C:\Users\Admin\Desktop\Антон\exp\2CH65.txt";
       //string[] lines = File.ReadAllLines(path);
@@ -132,7 +135,7 @@ namespace Plotter
       //zedGraphControl.Invalidate();
 
 
-      ProcessData();
+      //ProcessData();
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -361,6 +364,11 @@ namespace Plotter
     {
       NeuronDataManager.CreateNeuron(Path_toLoad);
 
+      //
+      //CorrectNeuronValues();
+
+
+      //
       NeuronSelector.Items.Clear();
       foreach (SingleNeuron neuron in NeuronDataManager.Neurons.Values)
       {
@@ -440,7 +448,7 @@ namespace Plotter
         if (dialog.ShowDialog() == DialogResult.OK)
         {
           Path_toLoad = dialog.SelectedPath;
-          //ProcessData();
+          ProcessData();
         }
       }
     }

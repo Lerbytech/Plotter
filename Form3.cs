@@ -98,7 +98,7 @@ namespace Plotter
 
       GraphPane pane2 = zedGraphControl2.GraphPane;
       pane2.XAxis.Title.Text = "Время ";
-      pane1.Title.Text = "Распределение промежутков между электрическими сигналами";
+      pane2.Title.Text = "Распределение промежутков между электрическими сигналами";
       //pane2.YAxis.Title.Text = "Номер нейрона";
 
       pane2.CurveList.Clear();
